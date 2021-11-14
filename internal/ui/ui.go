@@ -154,7 +154,7 @@ func WidgetScreen(ctx context.Context, app fyne.App, displaySize fyne.Size, r me
 	connMethod := widget.NewSelect([]string{project.BasicAuth, project.Datasource}, func(opt string) {
 		method = opt
 	})
-	connMethod.Selected = project.BasicAuth
+	connMethod.Selected = project.Datasource
 	modelJsonGenerator := widget.NewButton("Connect To Database", func() {
 		err = project.RunWithUI(ctx, app, displaySize, types, prjTmplDirEntry.Text, prjTmplNameEntry.Text, projectName.Text, dbCache, connMethod.Selected)
 		if err != nil {
@@ -179,7 +179,7 @@ func WidgetScreen(ctx context.Context, app fyne.App, displaySize fyne.Size, r me
 		tmplEntry,
 		widget.NewLabel("Project Template Dir:"),
 		prjTmplDirEntry,
-		widget.NewLabel("Project Template:"),
+		widget.NewLabel("Project Template Name:"),
 		prjTmplNameEntry,
 	)
 	return container.NewBorder(nil, vBox, nil, nil, dirBox)

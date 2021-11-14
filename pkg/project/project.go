@@ -46,6 +46,7 @@ const (
 	ErrInvPort    = "invalid port"
 	ErrInvDBName  = "invalid relationship name"
 )
+
 func BuildDataSourceName(c metadata.DatabaseConfig) string {
 	if c.Driver == "postgres" {
 		uri := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%d sslmode=disable", c.User, c.Database, c.Password, c.Host, c.Port)
@@ -457,12 +458,28 @@ func datasource(dbCache metadata.Database, driverEntry *widget.RadioGroup) *fyne
 func getDatabaseName(dbCache metadata.Database, driver string) (string, error) {
 	switch driver {
 	case s.DriverMysql:
-		s1 := strings.Split(dbCache.MySql, "/")
+		s1 := strings.Split(dbCache.Sqlite3, "/")
 		if len(s1) < 2 {
 			return "", errors.New("invalid datasource")
 		}
 		s2 := strings.Split(s1[1], "?")
 		return s2[0], nil
+	case s.DriverPostgres:
+		s1 := strings.Split(dbCache.Sqlite3, "dbname=")
+		if len(s1) < 2 {
+			return "", errors.New("invalid datasource")
+		}
+		s2 := strings.Split(s1[1], " ")
+		return s2[0], nil
+	case s.DriverMssql:
+		s1 := strings.Split(dbCache.Sqlite3, "database=")
+		if len(s1) < 2 {
+			return "", errors.New("invalid datasource")
+		}
+		s2 := strings.Split(s1[1], "&")
+		return s2[0], nil
+	case s.DriverSqlite3:
+		return filepath.Base(dbCache.Sqlite3), nil
 	default:
 		return "", errors.New(s.DriverNotSupport)
 	}

@@ -7,14 +7,15 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"github.com/core-go/config"
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/go-generator/core"
 	"github.com/go-generator/core/display"
-	"github.com/go-generator/core/io"
+	"github.com/go-generator/core/types"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"go-generator/internal/ui"
 	"log"
-	"os"
 	"path/filepath"
 )
 
@@ -43,10 +44,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	types, err := initTypes("type")
-	if err != nil {
-		panic(err)
-	}
+
 	//project.RunWithCommandLine(types["go"].(map[string]string))
 	a := app.New()
 	w := a.NewWindow("Metadata and Code Generator")
@@ -74,7 +72,7 @@ func main() {
 	})
 	w.SetIcon(r)
 	w.SetMainMenu(fyne.NewMainMenu(fyne.NewMenu("Setting", settingsItem)))
-	t := types[filepath.Base(root.Template)].(map[string]string)
+	t := types.Types[filepath.Base(root.Template)]
 	wContent := ui.WidgetScreen(context.TODO(), a, size, root, t, dbCache)
 	w.SetContent(wContent)
 	//w.SetFullScreen(true)
@@ -83,24 +81,7 @@ func main() {
 	w.ShowAndRun()
 }
 
-func initTypes(folder string) (map[string]interface{}, error) {
-	types := make(map[string]interface{}, 0)
-	names, err := io.List(folder)
-	if err != nil {
-		return nil, err
-	}
-	for _, name := range names {
-		filename := removeExt(name)
-		t, err := config.LoadMap(folder + string(os.PathSeparator) + name)
-		if err != nil {
-			return nil, err
-		}
-		types[filename] = t
-	}
-	return types, err
-}
-
-func removeExt(name string) string {
-	ext := filepath.Ext(name)
-	return name[0 : len(name)-len(ext)]
-}
+//func removeExt(name string) string {
+//	ext := filepath.Ext(name)
+//	return name[0 : len(name)-len(ext)]
+//}
