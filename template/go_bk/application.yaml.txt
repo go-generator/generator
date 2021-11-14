@@ -1,0 +1,32 @@
+server:
+  name: evaluation
+  port: 3002
+
+ldap:
+  server: 192.168.1.234:389
+  binding_format: uid=%s,ou=users,dc=tma,dc=com,dc=vn
+
+administrators: nmduc,bttran,hqtuan,vvthuong,dttotrang,lduyenminh
+password_encryption_key:
+token_prefix: PrentationEvaluation
+
+token:
+  secret: secrettma
+  expires: 86400000
+
+redis: redis://@localhost:6379
+
+database:
+  provider: mysql
+  sql:
+    dialect: mysql
+    host: localhost
+    port: 3306
+    database: evaluation
+    user: root
+    password: 123456
+  mongo:
+    uri: mongodb://localhost:27017
+    database: evaluation
+
+

@@ -1,0 +1,10 @@
+import { HealthController } from 'express-ext';
+import { UploadController } from 'uploads/UploadController';{{ range $element := .collections }}
+import { {{$element.Name}}{{env.Controller}} } from './{{$element.name}}';
+{{end}}
+
+export interface ApplicationContext {
+  health: HealthController;{{ range $element := .collections }}
+  {{$element.name}}{{env.Controller}}: {{$element.Name}}{{env.Controller}}
+{{end}}
+}

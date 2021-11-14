@@ -1,0 +1,6 @@
+import { ResultInfo, Service } from 'onecore';
+import { {{.Name}} } from './{{.Name}}';
+import { {{.Name}}{{.env.Filter}} } from './{{.Name}}{{.env.Filter}}';
+
+export interface {{.Name}} {{.env.Service}} extends Service<{{.Name}}, {{.tsId}}, number | ResultInfo<{{.Name}}>, {{.Name}}{{.env.Filter}}> {
+}

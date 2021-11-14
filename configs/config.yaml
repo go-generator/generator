@@ -1,0 +1,5 @@
+project_name: go-sql-rest-api
+template: template/go
+types: type
+projects: template/project/
+project: go_sql

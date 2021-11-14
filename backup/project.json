@@ -1,0 +1,17 @@
+{
+ "folders": [
+  {
+   "env": [
+    "filter",
+    "configs",
+    "controller",
+    "service/impl",
+    "route",
+    "service"
+   ],
+   "entity": null,
+   "model": "model",
+   "files": null
+  }
+ ]
+}

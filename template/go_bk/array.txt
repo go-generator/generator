@@ -1,0 +1,55 @@
+package ${env:model_raw};
+
+import javax.persistence.*;
+import java.lang.String;
+import java.util.List;
+
+@Entity
+${self:IdClassJavaAnnotation}
+public class ${self:Name} {
+     
+    ${begin}
+        ${case id=true}
+        @Id
+        @Column(name = "${lower}")
+        private ${type} ${lower};
+
+        public String get${Name}() {
+        return ${lower};
+        }
+
+        public void set${Name}(${type} value) {
+        this.${lower} = value;
+        }
+        ${endcase}
+        ${case default}
+        @Column(name = "${lower}")
+        private ${type} ${lower};
+
+        public String get${Name}() {
+        return ${lower};
+        }
+
+        public void set${Name}(${type} value) {
+        this.${lower} = value;
+        }
+        ${endcase}
+    ${end}
+    ${begin}
+    ${case head=true}
+     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+         @JoinColumns({
+         ${endcase}
+         ${case middle=true}
+           @JoinColumn(name = "${refCol}", referencedColumnName = "${refToCol}"),
+         ${endcase}
+         ${case foot=true}
+           })
+     private List<${refTable_Name}> ${refTable_raw}s;
+        ${endcase}
+        ${end}
+     
+
+     public ${self:Name}() {
+     }
+}

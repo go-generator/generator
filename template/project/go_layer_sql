@@ -1,0 +1,64 @@
+{
+  "env": {
+    "layer": "true",
+    "go_module": "go-service",
+    "usecase": "/usecase",
+    "model": "model",
+    "filter": "filter",
+    "service": "service",
+    "handler": "handler",
+    "Filter": "Filter",
+    "Repository": "Repository",
+    "Service": "Service",
+    "Handler": "Handler"
+  },
+  "statics": [
+    {
+      "name": "sql_go_mod",
+      "file": "go.mod"
+    },
+    {
+      "name": "main",
+      "file": "main.go"
+    },
+    {
+      "name": "sql_config",
+      "file": "configs/config.yaml"
+    },
+    {
+      "name": "sql_root",
+      "file": "internal/app/root.go"
+    }
+  ],
+  "arrays": [
+    {
+      "name": "sql_app",
+      "file": "internal/app/app.go"
+    },
+    {
+      "name": "route",
+      "file": "internal/app/route.go"
+    }
+  ],
+  "entities": [
+    {
+      "name": "model",
+      "file": "internal/{{.env.model}}/{{.raw}}.go"
+    },
+    {
+      "name": "filter",
+      "file": "internal/{{.env.filter}}/{{.raw}}_filter.go"
+    },
+    {
+      "name": "service",
+      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_service.go"
+    },
+    {
+      "name": "handler",
+      "file": "internal{{.env.handler}}/{{.raw}}_handler.go"
+    }
+  ],
+  "type": {
+    "string": "string"
+  }
+}

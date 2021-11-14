@@ -1,0 +1,36 @@
+package ${env:route_raw}
+
+import (
+	"${env:project_name}/config"
+    "github.com/common-go/mongo"
+    "github.com/labstack/echo"
+    "github.com/labstack/echo/middleware"
+)
+
+type EvaRoutes struct {
+	Router *echo.Echo
+}
+
+func New${env:Project}Routes(e *echo.Echo, mongoConfig mongo.MongoConfig,) (*EvaRoutes, error) {
+	applicationContext, err := config.NewApplicationContext(mongoConfig,)
+	if err != nil {
+		return nil, err
+	}
+
+	//middle for all routes
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+
+    ${begin}
+	${name}Controller := applicationContext.${Name}Controller
+	${name}Path := "/${env:project_name}/${name}"
+	e.GET(${name}Path, ${name}Controller.GetAll())
+	e.POST(${name}Path, ${name}Controller.Insert())
+	e.GET(${name}Path+"/:id", ${name}Controller.GetById())
+	e.POST(${name}Path+"/search", ${name}Controller.Search())
+	e.PUT(${name}Path+"/:id", ${name}Controller.Update())
+	${end}
+
+	return &EvaRoutes{e}, nil
+}

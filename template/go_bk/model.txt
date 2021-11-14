@@ -1,0 +1,16 @@
+package ${env:model_raw}
+
+type ${self:Name} struct {
+${begin}
+${case id=true}
+
+	${Name} ${type} `json:"${name}" gorm:"column:${lower};primary_key" bson:"_id" dynamodbav:"${name}" firestore:"${name}"`
+
+${endcase}
+${case default}
+
+	${Name} ${type} `json:"${name},omitempty" gorm:"column:${lower}" bson:"${name},omitempty" dynamodbav:"${name},omitempty" firestore:"${name},omitempty"`
+
+${endcase}
+${end}
+}

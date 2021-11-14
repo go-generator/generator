@@ -1,0 +1,10 @@
+package {{.name}}
+
+import . "github.com/core-go/search"
+
+type {{.Name}}{{.env.Filter}} struct {
+	*Filter
+	{{ range $element := .fields }}
+    {{$element.Name}}   {{$element.type}}    `json:"{{$element.name}}" gorm:"column:{{$element.Name}}{{if $element.key}};primary_key{{end}}" bson:"{{$element.source}}" dynamodbav:"{{$element.name}}" firestore:"{{$element.name}}" validate:"required{{if ne $element.length 0}},max={{$element.length}}{{end}}"`
+    {{end}}
+}

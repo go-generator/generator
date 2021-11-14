@@ -1,0 +1,57 @@
+package app
+
+import (
+	"context"
+	"github.com/core-go/health"
+	"github.com/core-go/log"
+	sv "github.com/core-go/service"
+	v "github.com/core-go/service/v10"
+	q "github.com/core-go/sql"
+	"github.com/core-go/sql/query"
+	_ "github.com/go-sql-driver/mysql"
+	"reflect"{{if .env.layer}}
+	. "{{.env.go_module}}/internal/{{.env.handler}}"
+	. "{{.env.go_module}}/internal/{{.env.model}}"
+{{end}}{{ range $element := .collections }}
+	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.name}}"
+{{end}})
+
+type ApplicationContext struct {
+	HealthHandler *health.Handler{{ range $element := .collections }}
+	{{$element.Name}}{{.env.Handler}} {{$element.Name}}{{.env.Handler}}
+{{end}}}
+
+func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
+	db, err := q.OpenByConfig(root.Sql)
+	if err != nil {
+		return nil, err
+	}
+	logError := log.ErrorMsg
+	status := sv.InitializeStatus(root.Status)
+	action := sv.InitializeAction(root.Action)
+	validator := v.NewValidator()
+
+    {{ range $element := .collections }}
+    {{$element.name}}Type := reflect.TypeOf({{$element.Name}}{})
+    {{$element.name}}QueryBuilder := query.NewBuilder(db, "{{$element.table}}", {{$element.name}}Type)
+    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}QueryBuilder.BuildQuery)
+    if err != nil {
+        return nil, err
+    }
+    {{$element.name}}{{.env.Repository}}, err := q.NewRepository(db, "{{$element.table}}", {{$element.name}}Type)
+    if err != nil {
+       	return nil, err
+    }
+    {{$element.name}}{{.env.Service}} := New{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.Repository}})
+    {{$element.name}}{{.env.Handler}} := New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
+{{end}}
+	sqlChecker := q.NewHealthChecker(db)
+	healthHandler := health.NewHandler(sqlChecker)
+
+	return &ApplicationContext{
+		HealthHandler: healthHandler,
+		{{ range $element := .collections }}
+        {{$element.Name}}{{$element.env.Handler}}: {{$element.name}}{{$element.env.Handler}},
+{{end}}
+	}, nil
+}

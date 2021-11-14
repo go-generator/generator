@@ -1,0 +1,5 @@
+mysql: root:12345678x@X@(localhost:3306)/classicmodels?charset=utf8&parseTime=True&loc=Local
+postgres: user=postgres dbname=postgres password=12345678x@X host=localhost port=5432 sslmode=disable
+sqlite3:
+mssql: sqlserver://abc:12345678@localhost?database=BikeStores
+oracle:

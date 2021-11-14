@@ -1,0 +1,10 @@
+import { Controller } from 'express-ext';
+import { {{.Name}} } from './{{.Name}}';
+import { {{.Name}}{{.env.Filter}} } from './{{.Name}}{{.env.Filter}}';
+import { {{.Name}}{{.env.Service}} } from './{{.Name}}{{.env.Service}}';
+
+export class {{.Name}}{{.env.Controller}} extends Controller<{{.Name}}, {{.tsId}}, {{.Name}}{{.env.Filter}}> {
+  constructor(log: (msg: any, ctx?: any) => void, {{.name}}{{.env.Service}}: {{.Name}}{{.env.Service}}) {
+    super(log, {{.name}}{{.env.Service}});
+  }
+}

@@ -1,0 +1,4 @@
+export interface {{.Name}} { {{ range $element := .fields }}
+	{{$element.name}}?: {{$element.type}};
+	{{end}}
+}
