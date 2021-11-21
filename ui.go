@@ -1,4 +1,3 @@
-// Package main provides various examples of Fyne API capabilities
 package main
 
 import (
@@ -10,7 +9,6 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/go-generator/core"
 	"github.com/go-generator/core/display"
-	"github.com/go-generator/core/types"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -32,37 +30,38 @@ func setIcon(path string) (fyne.Resource, error) {
 }
 
 func main() {
+	ctx := context.TODO()
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	//project.RunWithCommandLine()
 	var root metadata.Config
 	var dbCache metadata.Database
 	err := config.Load(&root, "configs/config")
 	if err != nil {
 		panic(err)
 	}
-	err = config.Load(&dbCache, "configs/database")
+	err = config.Load(&dbCache, "configs/datasource")
 	if err != nil {
 		panic(err)
 	}
 
-	//project.RunWithCommandLine(types["go"].(map[string]string))
-	a := app.New()
+	a := app.NewWithID("Generator")
+	r, err1 := setIcon("./icons/icon.png")
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+	a.SetIcon(r)
 	w := a.NewWindow("Metadata and Code Generator")
+	canvas := w.Canvas()
 	sWidth, sHeight, err := display.GetActiveDisplaySize(0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	size := fyne.NewSize(float32(sWidth), float32(sHeight))
-	w.Resize(display.ResizeWindows(30, 25, size))
-	r, err1 := setIcon("./icons/icon.png")
-	if err1 != nil {
-		log.Fatal(err1)
-	}
+	w.Resize(display.ResizeWindows(30, 60, size))
 	settingsItem := fyne.NewMenuItem("Settings", func() {
 		wi := a.NewWindow("App Settings")
 		r1, err1 := setIcon("./icons/app.jpg")
 		if err1 != nil {
-			display.ShowErrorWindows(a, err1, size)
+			display.PopUpWindows(err1.Error(), canvas)
 			return
 		}
 		wi.SetIcon(r1)
@@ -72,16 +71,10 @@ func main() {
 	})
 	w.SetIcon(r)
 	w.SetMainMenu(fyne.NewMainMenu(fyne.NewMenu("Setting", settingsItem)))
-	t := types.Types[filepath.Base(root.Template)]
-	wContent := ui.WidgetScreen(context.TODO(), a, size, root, t, dbCache)
+
+	wContent := ui.WidgetScreen(ctx, canvas, root, dbCache)
 	w.SetContent(wContent)
-	//w.SetFullScreen(true)
 	w.SetMaster()
 	w.CenterOnScreen()
 	w.ShowAndRun()
 }
-
-//func removeExt(name string) string {
-//	ext := filepath.Ext(name)
-//	return name[0 : len(name)-len(ext)]
-//}

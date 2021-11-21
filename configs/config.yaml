@@ -1,5 +1,6 @@
-project_name: go-sql-rest-api
-template: template/go
-types: type
-projects: template/project/
-project: go_sql
+projectName: go-sql-rest-api
+template: template
+prjTmplPath: project
+prjTmplName: go_sql
+cache: configs/cache.yaml
+dbCache: configs/datasource.yaml

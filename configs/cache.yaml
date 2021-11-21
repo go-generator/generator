@@ -1,6 +1,0 @@
-database: classicmodels
-driver: mysql
-host: localhost
-password: !!binary 96Ubu9ZOlfrdkLw6EtJyvfv16aZeJxxduomKvQ1UysE=
-port: "3306"
-user: root

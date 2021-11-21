@@ -1,6 +1,7 @@
 {
+  "language": "go",
   "env": {
-    "go_module": "go-service",
+    "go_module": "{{.env.project}}",
     "usecase": "/usecase",
     "model": "model",
     "filter": "filter",

@@ -4,16 +4,15 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.1.1
-	github.com/core-go/cipher v0.0.0
 	github.com/core-go/config v0.1.0
 	github.com/core-go/sql v0.2.32
 	github.com/denisenkom/go-mssqldb v0.11.0
-	github.com/go-generator/core v0.0.3
+	github.com/go-generator/core v0.0.7
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/lib/pq v1.10.3
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/sqweek/dialog v0.0.0-20211002065838-9a201b55ab91
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v2 v2.2.8
 )
 
 require (
@@ -51,5 +50,5 @@ require (
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

@@ -1,6 +1,6 @@
 {
+  "language": "go",
   "env": {
-    "layer": "true",
     "go_module": "go-service",
     "usecase": "/usecase",
     "model": "model",
@@ -14,7 +14,7 @@
   },
   "statics": [
     {
-      "name": "sql_go_mod",
+      "name": "mongo_go_mod",
       "file": "go.mod"
     },
     {
@@ -22,17 +22,17 @@
       "file": "main.go"
     },
     {
-      "name": "sql_config",
+      "name": "mongo_config",
       "file": "configs/config.yaml"
     },
     {
-      "name": "sql_root",
+      "name": "mongo_root",
       "file": "internal/app/root.go"
     }
   ],
   "arrays": [
     {
-      "name": "sql_app",
+      "name": "mongo_app",
       "file": "internal/app/app.go"
     },
     {
@@ -43,11 +43,11 @@
   "entities": [
     {
       "name": "model",
-      "file": "internal/{{.env.model}}/{{.raw}}.go"
+      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}.go"
     },
     {
       "name": "filter",
-      "file": "internal/{{.env.filter}}/{{.raw}}_filter.go"
+      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_filter.go"
     },
     {
       "name": "service",
@@ -55,7 +55,7 @@
     },
     {
       "name": "handler",
-      "file": "internal{{.env.handler}}/{{.raw}}_handler.go"
+      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_handler.go"
     }
   ],
   "type": {

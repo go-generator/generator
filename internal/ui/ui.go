@@ -1,186 +1,332 @@
 package ui
 
 import (
+	"bytes"
 	"context"
-	"errors"
+	"encoding/json"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	s "github.com/core-go/sql"
 	"github.com/go-generator/core"
 	"github.com/go-generator/core/build"
 	"github.com/go-generator/core/display"
+	"github.com/go-generator/core/export"
+	edb "github.com/go-generator/core/export/db"
+	"github.com/go-generator/core/export/relationship"
+	uni "github.com/go-generator/core/export/types"
 	"github.com/go-generator/core/generator"
 	"github.com/go-generator/core/io"
 	"github.com/go-generator/core/loader"
 	"github.com/go-generator/core/project"
+	"github.com/go-generator/core/types"
 	"github.com/sqweek/dialog"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 )
 
+func notifySuccess(content string) {
+	fyne.CurrentApp().SendNotification(fyne.NewNotification("Message", content))
+}
+
 // WidgetScreen shows a panel containing widget
-func WidgetScreen(ctx context.Context, app fyne.App, displaySize fyne.Size, r metadata.Config, types map[string]string, dbCache metadata.Database) fyne.CanvasObject {
-	templateAbsPath, err := filepath.Abs(r.Template)
+func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
+	tmplPath, err := filepath.Abs(filepath.Join(".", r.TemplatePath))
 	if err != nil {
 		log.Fatal(err)
 	}
-	projectAbsPath, err := filepath.Abs(r.Projects)
+	langTmpl, err := LoadAllLanguageTemplates(tmplPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pPath, err := filepath.Abs(filepath.Join(".", r.PrjTmplPath))
+	if err != nil {
+		log.Fatal(err)
+	}
+	projTmpl, err := io.Load(pPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	prjTypes, err := io.List(pPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplEntry := widget.NewEntry()
-	tmplEntry.SetText(templateAbsPath)
-
-	prjTmplDirEntry := widget.NewEntry()
-	prjTmplDirEntry.SetText(projectAbsPath)
-
-	prjTmplNameEntry := widget.NewEntry()
-	prjTmplNameEntry.SetText(r.Project)
+	prjTypeName := r.PrjTmplName
+	prjTmplNameEntry := widget.NewSelect(prjTypes, func(o string) {
+		prjTypeName = o
+	})
+	prjTmplNameEntry.Selected = r.PrjTmplName
 
 	projectName := widget.NewEntry()
 	projectName.SetText(r.ProjectName)
 	projectName.SetPlaceHolder("Project Name:")
 
-	templateBrowse := widget.NewButton("Browse Template Folder", func() {
-		di := dialog.Directory()
-		di.StartDir = templateAbsPath
-		directory, err := di.Title("Browse...").Browse()
-		if err == dialog.ErrCancelled {
-			return
-		}
-		if err != nil {
-			tmplEntry.SetText(err.Error())
-			return
-		}
-		tmplEntry.SetText(directory)
-	})
-
-	projectJson := widget.NewMultiLineEntry()
-	projectJson.SetPlaceHolder("Input Project JSON here....")
-	pButtonWindows := widget.NewButton("Project JSON Input...", func() {
-		oldText := projectJson.Text
-		newWindows := app.NewWindow("Project JSON Structure Input")
-		saveButton := widget.NewButton("Save", func() {
-			oldText = projectJson.Text
-			newWindows.Close()
-		})
-		cancelButton := widget.NewButton("Cancel", func() {
-			projectJson.SetText(oldText)
-			newWindows.Close()
-		})
-		scroll := container.NewScroll(projectJson)
-		content := container.NewBorder(nil, container.NewVBox(saveButton, cancelButton), nil, nil, scroll)
-		newWindows.SetContent(content)
-		newWindows.CenterOnScreen()
-		newWindows.Show()
-	})
-
 	largeText := widget.NewMultiLineEntry()
 	largeText.SetPlaceHolder("Input")
 	outputJson := widget.NewMultiLineEntry()
 	outputJson.PlaceHolder = "Generated Code Here"
-	inputButton := widget.NewButton("Generate From JSON Input", func() {
-		if projectName.Text == "" {
-			projectName.SetText(r.ProjectName)
-		}
-		err = generator.GenerateFromString(projectName.Text, outputJson.Text, generator.InitEnv)
-		if err != nil {
-			display.ShowErrorWindows(app, err, displaySize)
-		} else {
-			display.ShowSuccessWindows(app, "OK", displaySize)
-		}
+
+	outputWindows := widget.NewMultiLineEntry()
+	outputWindows.SetPlaceHolder("Generated Files Goes Here....")
+	outputWindows.TextStyle = fyne.TextStyle{
+		Bold:      false,
+		Italic:    true,
+		Monospace: true,
+		TabWidth:  0,
+	}
+	outputWindows.Wrapping = fyne.TextWrapBreak
+
+	var driverEntry *widget.RadioGroup
+	driverEntry = widget.NewRadioGroup([]string{s.DriverMysql, s.DriverMssql, s.DriverSqlite3, s.DriverPostgres}, func(s string) {
+		driverEntry.SetSelected(s)
 	})
-	inputButton.Hidden = true //temporary hidden
+	driverEntry.Horizontal = true
+	driverEntry.SetSelected(s.DriverMysql)
+	dsnSourceEntry := widget.NewEntry()
+	dsnSourceEntry.OnChanged = func(dsn string) {
+		switch driverEntry.Selected {
+		case s.DriverMysql:
+			dbCache.MySql = dsn
+		case s.DriverPostgres:
+			dbCache.Postgres = dsn
+		case s.DriverMssql:
+			dbCache.Mssql = dsn
+		case s.DriverSqlite3:
+			dbCache.Sqlite3 = dsn
+		case s.DriverOracle:
+			dbCache.Oracle = dsn
+		}
+	}
+	dsnSourceEntry.SetText(project.SelectDSN(dbCache, driverEntry.Selected))
+
+	driverEntry.OnChanged = func(driver string) {
+		dsnSourceEntry.SetText(project.SelectDSN(dbCache, driver))
+	}
 
 	var output metadata.Output
-	openFileButton := widget.NewButton("Generate Project From JSON Metadata", func() {
-		if !io.IsValidPath(tmplEntry.Text) {
-			display.ShowErrorWindows(app, errors.New("template folder path is required"), displaySize)
-			return
-		}
+	loadPrJson := widget.NewButton("Load Metadata File and Generate", func() {
 		filename, err := dialog.File().Title("Load Metadata File").Filter("All Files").Load()
 		if err != nil {
-			display.ShowErrorWindows(app, err, displaySize)
+			display.PopUpWindows(err.Error(), canvas)
 			return
 		} else {
-			output, err = generator.GenerateFromFile(tmplEntry.Text, projectName.Text, filename, loader.LoadProject, io.Load, generator.InitEnv, build.BuildModel)
+			output, err = generator.GenerateFromFile(langTmpl, projectName.Text, filename, loader.LoadProject, generator.InitEnv, build.BuildModel)
 			if err != nil {
-				display.ShowErrorWindows(app, err, displaySize)
+				display.PopUpWindows(err.Error(), canvas)
 				return
 			} else {
 				result, err := generator.ToString(output.Files)
 				if err != nil {
-					display.ShowErrorWindows(app, err, displaySize)
+					display.PopUpWindows(err.Error(), canvas)
 					return
 				}
-				size := display.ResizeWindows(40, 30, displaySize)
-				wa := app.NewWindow("Generated Code")
-				entry := widget.NewMultiLineEntry()
-				entry.Wrapping = fyne.TextWrapWord
-				entry.SetText(result)
-				saveButton := widget.NewButton("Save Project Files", func() {
-					directory, err := dialog.Directory().Title("Save Project Files In...").Browse()
-					if output.Directory != "" {
-						directory = directory + string(os.PathSeparator) + output.Directory
-						err = io.MkDir(directory)
-						if err != nil {
-							return
-						}
-					}
-					err1 := io.SaveOutput(directory, output)
-					if err1 != nil {
-						display.ShowErrorWindows(app, err1, displaySize)
-						wa.Close()
-						return
-					}
-					wa.Close()
-				})
-				cancelButton := widget.NewButton("Cancel", func() {
-					wa.Close()
-				})
-				scroll := container.NewScroll(entry)
-				vBox := container.NewVBox(saveButton, cancelButton)
-				wa.SetContent(container.NewBorder(nil, vBox, nil, nil, scroll))
-				wa.Resize(size)
-				wa.CenterOnScreen()
-				wa.Show()
+				outputWindows.SetText(result)
+				notifySuccess("Generate Successfully")
+				//directory, err := dialog.Directory().Title("Save Project Files In...").Browse()
+				//if output.Directory != "" {
+				//	directory = directory + string(os.PathSeparator) + output.Directory
+				//	err = io.MkDir(directory)
+				//	if err != nil {
+				//		return
+				//	}
+				//}
+				//err1 := io.SaveOutput(directory, output)
+				//if err1 != nil {
+				//	display.PopUpWindows(err1.Error(), canvas)
+				//	return
+				//}
 			}
 		}
 	})
 
-	method := project.BasicAuth
-	connMethod := widget.NewSelect([]string{project.BasicAuth, project.Datasource}, func(opt string) {
-		method = opt
+	projectJsonInput := widget.NewMultiLineEntry()
+	projectJsonInput.SetPlaceHolder("Input Project JSON here...")
+	projectJsonInput.Wrapping = fyne.TextWrapWord
+
+	var optimizeEntry *widget.Check
+	optimizeEntry = widget.NewCheck("Optimization", func(b bool) {
+		optimizeEntry.SetChecked(b)
 	})
-	connMethod.Selected = project.Datasource
-	modelJsonGenerator := widget.NewButton("Connect To Database", func() {
-		err = project.RunWithUI(ctx, app, displaySize, types, prjTmplDirEntry.Text, prjTmplNameEntry.Text, projectName.Text, dbCache, connMethod.Selected)
+	optimizeEntry.SetChecked(true)
+
+	connectGenerate := widget.NewButton("Connect and Generate", func() {
+		var (
+			toModels []metadata.Model
+			prj      *metadata.Project
+			pData    bytes.Buffer
+		)
+		sqlDB, err := project.ConnectDB(dbCache, driverEntry.Selected)
 		if err != nil {
-			display.ShowErrorWindows(app, err, displaySize)
+			display.PopUpWindows(err.Error(), canvas)
+		}
+		defer func() {
+			err = sqlDB.Close()
+			if err != nil {
+				display.PopUpWindows(err.Error(), canvas)
+			}
+		}()
+		enc := json.NewEncoder(&pData)
+		enc.SetIndent("", "   ")
+		dbName, err := project.GetDatabaseName(dbCache, driverEntry.Selected)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
+
+		rt, _, err := relationship.FindRelationships(ctx, sqlDB, dbName)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		tables, err := edb.ListTables(ctx, sqlDB, dbName)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		t := uni.Types[driverEntry.Selected]
+		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, rt, t)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		if optimizeEntry.Checked {
+			err = enc.Encode(&toModels)
+			if err != nil {
+				display.PopUpWindows(err.Error(), canvas)
+				return
+			}
+		} else {
+			prj, err = generator.ExportProject(projTmpl, r.PrjTmplName, projectName.Text, toModels, generator.InitEnv)
+			if err != nil {
+				display.PopUpWindows(err.Error(), canvas)
+				return
+			}
+			exTypes, ok := types.Types[prj.Language]
+			if !ok {
+				log.Fatal("missing export type for current language")
+			}
+			for i := range prj.Models {
+				for j := range prj.Models[i].Fields {
+					if _, ok := exTypes[prj.Models[i].Fields[j].Type]; !ok {
+						continue
+					}
+					prj.Models[i].Fields[j].Type = exTypes[prj.Models[i].Fields[j].Type] // converse from universal time to go type
+				}
+			}
+			err = enc.Encode(&prj)
+			if err != nil {
+				display.PopUpWindows(err.Error(), canvas)
+				return
+			}
+		}
+		cache, err := yaml.Marshal(dbCache)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		err = io.Save(filepath.Join(".", r.DBCache), cache)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		projectJsonInput.SetText(pData.String())
+		notifySuccess("Generated Successfully")
 	})
 
-	vBox := container.NewVBox(
-		templateBrowse,
-		pButtonWindows,
-		inputButton,
-		openFileButton,
-		modelJsonGenerator,
+	saveProjectJson := widget.NewButton("Save Project JSON Input", func() {
+		outFile, err := dialog.File().Filter("json", ".json").Title("Save As").Save()
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		err = io.SaveContent(outFile, projectJsonInput.Text)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		notifySuccess("Saved Successfully")
+	})
+
+	prScroll := container.NewScroll(projectJsonInput)
+	generateButton := widget.NewButton("Generate From Project JSON Input", func() {
+		//directory, err := dialog.Directory().Title("Save Project Files In...").Browse()
+		//if output.Directory != "" {
+		//	directory = directory + string(os.PathSeparator) + output.Directory
+		//	err = io.MkDir(directory)
+		//	if err != nil {
+		//		return
+		//	}
+		//}
+		prj, err := generator.DecodeProject([]byte(projectJsonInput.Text), projectName.Text, generator.InitEnv)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		files, err := generator.Generate(prj, langTmpl[prj.Language], build.BuildModel)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		result, err := generator.ToString(files)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+		outputWindows.SetText(result)
+		notifySuccess("Generated Successfully")
+		//err = io.SaveFiles(directory, files)
+		//if err != nil {
+		//	display.PopUpWindows(err.Error(), canvas)
+		//	return
+		//}
+	})
+
+	bottomButtons := container.NewVBox(
+		connectGenerate,
+		generateButton,
+		saveProjectJson,
+		loadPrJson,
 	)
 	dirBox := container.NewVBox(
-		widget.NewLabel("Authentication Method:"),
-		connMethod,
-		widget.NewLabel("Project Name:"),
+		optimizeEntry,
+		widget.NewTextGridFromString("Datasource name:"),
+		driverEntry,
+		dsnSourceEntry,
+		//container.NewHSplit(widget.NewTextGridFromString("Project name:"), projectName),
+		//container.NewHSplit(widget.NewTextGridFromString("Project Template:"), prjTmplNameEntry),
+		widget.NewTextGridFromString("Project name:"),
 		projectName,
-		widget.NewLabel("Template Dir:"),
-		tmplEntry,
-		widget.NewLabel("Project Template Dir:"),
-		prjTmplDirEntry,
-		widget.NewLabel("Project Template Name:"),
+		widget.NewTextGridFromString("Project template name:"),
 		prjTmplNameEntry,
 	)
-	return container.NewBorder(nil, vBox, nil, nil, dirBox)
+
+	return container.NewHSplit(container.NewBorder(dirBox, bottomButtons, nil, nil, prScroll), container.NewScroll(outputWindows))
+}
+
+func LoadAllLanguageTemplates(directory string) (map[string]map[string]string, error) {
+	projTmpl := make(map[string]map[string]string)
+	folders, err := io.List(directory)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, folder := range folders {
+		names, err := io.List(filepath.Join(directory, folder))
+		if err != nil {
+			return nil, err
+		}
+		tm := make(map[string]string, 0)
+		for _, n := range names {
+			content, err := ioutil.ReadFile(directory + string(os.PathSeparator) + folder + string(os.PathSeparator) + n)
+			if err != nil {
+				return nil, err
+			}
+			tm[n] = string(content)
+		}
+		projTmpl[folder] = tm
+	}
+	return projTmpl, err
 }
