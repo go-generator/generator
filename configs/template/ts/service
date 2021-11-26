@@ -1,12 +1,12 @@
-import { Manager, SearchResult } from 'onecore';{{if .env.layer}}
+import { Manager, Search } from 'onecore';{{if .env.layer}}
 import { {{.Name}}, {{.Name}}{{.env.Filter}}, {{.Name}}{{.env.Repository}}, {{.Name}}{{.env.Service}} } from '../{{.env.metadata}}/{{.path}}';{{end}}{{if ne .env.layer true}}
 import { {{.Name}}, {{.Name}}{{.env.Filter}}, {{.Name}}{{.env.Repository}}, {{.Name}}{{.env.Service}} } from './{{.path}}';{{end}}
 
 export class {{.Name}}{{.env.Manager}} extends Manager<{{.Name}}, {{.tsId}}, {{.Name}}{{.env.Filter}}> implements {{.Name}}{{.env.Service}} {
-  constructor(find: (s: {{.Name}}{{.env.Filter}}, limit?: number, offset?: number | string, fields?: string[]) => Promise<SearchResult<{{.Name}}>>, {{.env.repository}}: {{.Name}}{{.env.Repository}}) {
-    super(find, {{.env.repository}});
+  constructor(search: Search<{{.Name}}, {{.Name}}{{.env.Filter}}>, {{.env.repository}}: {{.Name}}{{.env.Repository}}) {
+    super(search, {{.env.repository}});
   }
 }
-export function {{.env.use}}{{.Name}}{{.env.Service}}(find: (s: {{.Name}}{{.env.Filter}}, limit?: number, offset?: number | string, fields?: string[]) => Promise<SearchResult<{{.Name}}>>, {{.env.repository}}: {{.Name}}{{.env.Repository}}): {{.Name}}{{.env.Service}} {
-  return new {{.Name}}{{.env.Manager}}(find, {{.env.repository}});
+export function {{.env.use}}{{.Name}}{{.env.Service}}(search: Search<{{.Name}}, {{.Name}}{{.env.Filter}}>, {{.env.repository}}: {{.Name}}{{.env.Repository}}): {{.Name}}{{.env.Service}} {
+  return new {{.Name}}{{.env.Manager}}(search, {{.env.repository}});
 }

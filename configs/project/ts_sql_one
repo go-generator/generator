@@ -2,6 +2,7 @@
   "language": "ts",
   "env": {
     "driver": "mysql",
+    "check": "true",
     "use": "use",
     "builder": "builder",
     "repository": "repository",
@@ -16,8 +17,7 @@
     "Controller": "Controller",
     "leaf": "true"
   },
-  "statics": [
-    {
+  "statics": [{
       "name": "settings",
       "file": ".vscode/settings.json"
     },
@@ -42,27 +42,25 @@
       "file": ".env"
     },
     {
-       "name": "sql_config",
-       "file": "src/config.ts"
+      "name": "sql_config",
+      "file": "src/config.ts"
     },
     {
       "name": "sql_app",
       "file": "src/app.ts"
     }
   ],
-  "arrays": [
-    {
+  "arrays": [{
       "name": "sql_context",
       "file": "src/context.ts"
     },
     {
       "name": "route",
       "file": "src/route.ts",
-	  "replace": true
+      "replace": true
     }
   ],
-  "entities": [
-    {
+  "entities": [{
       "name": "metadata",
       "file": "src/{{.env.usecase_path}}{{.path}}/{{.path}}.ts",
       "replace": true

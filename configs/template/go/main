@@ -11,7 +11,6 @@ import (
 	"net/http"
 
 	"{{.env.go_module}}/internal/app"
-	{{.env.driver | go_driver}}
 )
 
 func main() {
@@ -20,12 +19,11 @@ func main() {
 	if er1 != nil {
 		panic(er1)
 	}
-
 	r := mux.NewRouter()
 
 	log.Initialize(conf.Log)
 	r.Use(mid.BuildContext)
-	logger := mid.NewStructuredLogger()
+	logger := mid.NewLogger()
 	if log.IsInfoEnable() {
 		r.Use(mid.Logger(conf.MiddleWare, log.InfoFields, logger))
 	}

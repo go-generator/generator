@@ -2,9 +2,9 @@ server:
   name: {{.env.project}}
   port: {{.env.port}}
 
-sql:
-  driver: {{.env.driver}}
-  data_source_name: {{.env.data_source_name}}
+mongo:
+  uri: mongodb://localhost:27017
+  database: masterdata
 
 log:
   level: info

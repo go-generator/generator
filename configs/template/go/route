@@ -11,16 +11,16 @@ func Route(r *mux.Router, ctx context.Context, root Root) error {
 	if err != nil {
 		return err
 	}
-	r.HandleFunc("/health", app.HealthHandler.Check).Methods(GET)
+	r.HandleFunc("/health", app.Health.Check).Methods(GET)
 {{ range $element := .collections }}
     {{$element.name}}Path := "/{{$element.raws}}"
-    r.HandleFunc({{$element.name}}Path, app.{{$element.Name}}{{$element.env.Handler}}.Search).Methods(GET)
-    r.HandleFunc({{$element.name}}Path+"/search", app.{{$element.Name}}{{$element.env.Handler}}.Search).Methods(GET, POST)
-    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}{{$element.env.Handler}}.Load).Methods(GET)
-    r.HandleFunc({{$element.name}}Path, app.{{$element.Name}}{{$element.env.Handler}}.Create).Methods(POST)
-    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}{{$element.env.Handler}}.Update).Methods(PUT)
-    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}{{$element.env.Handler}}.Patch).Methods(PATCH)
-    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}{{$element.env.Handler}}.Delete).Methods(DELETE)
+    r.HandleFunc({{$element.name}}Path, app.{{$element.Name}}.Search).Methods(GET)
+    r.HandleFunc({{$element.name}}Path+"/search", app.{{$element.Name}}.Search).Methods(GET, POST)
+    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}.Load).Methods(GET)
+    r.HandleFunc({{$element.name}}Path, app.{{$element.Name}}.Create).Methods(POST)
+    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}.Update).Methods(PUT)
+    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}.Patch).Methods(PATCH)
+    r.HandleFunc({{$element.name}}Path+"/{{$element.go_id_url}}", app.{{$element.Name}}.Delete).Methods(DELETE)
 {{end}}
 	return nil
 }

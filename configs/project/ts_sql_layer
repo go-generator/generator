@@ -3,6 +3,7 @@
   "env": {
     "layer": "true",
     "driver": "mysql",
+    "check": "true",
     "use": "use",
     "metadata": "metadata",
     "repository": "repository",
@@ -11,7 +12,7 @@
     "service_path": "service",
     "controller": "controller",
     "controller_path": "controller",
-	"Model": "Model",
+    "Model": "Model",
     "Filter": "Filter",
     "Repository": "Repository",
     "Service": "Service",
@@ -20,8 +21,7 @@
     "Controller": "Controller",
     "leaf": "true"
   },
-  "statics": [
-    {
+  "statics": [{
       "name": "settings",
       "file": ".vscode/settings.json"
     },
@@ -46,16 +46,15 @@
       "file": ".env"
     },
     {
-       "name": "sql_config",
-       "file": "src/config.ts"
+      "name": "sql_config",
+      "file": "src/config.ts"
     },
     {
       "name": "sql_app",
       "file": "src/app.ts"
     }
   ],
-  "arrays": [
-    {
+  "arrays": [{
       "name": "sql_context",
       "file": "src/context.ts"
     },
@@ -65,8 +64,7 @@
       "replace": true
     }
   ],
-  "entities": [
-    {
+  "entities": [{
       "name": "metadata",
       "file": "src/{{.env.metadata}}/{{.path}}.ts",
       "replace": true

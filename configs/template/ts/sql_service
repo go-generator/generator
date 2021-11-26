@@ -1,4 +1,4 @@
-import { Manager, SearchResult } from 'onecore';
+import { Log, Manager, Search } from 'onecore';
 import { DB, SearchBuilder } from 'query-core';
 import { {{.Name}}, {{.Name}}{{.env.Filter}}, {{.name}}{{.env.Model}}, {{.Name}}{{.env.Repository}}, {{.Name}}{{.env.Service}} } from './{{.path}}';
 import { {{.Name}}{{.env.Controller}} } from './{{.path}}-{{.env.controller}}';
@@ -8,15 +8,15 @@ export { {{.Name}}{{.env.Controller}} };
 import { Sql{{.Name}}{{.env.Repository}} } from './sql-{{.path}}-{{.env.repository}}';
 
 export class {{.Name}}{{.env.Manager}} extends Manager<{{.Name}}, {{.tsId}}, {{.Name}}{{.env.Filter}}> implements {{.Name}}{{.env.Service}} {
-  constructor(find: (s: {{.Name}}{{.env.Filter}}, limit?: number, offset?: number | string, fields?: string[]) => Promise<SearchResult<{{.Name}}>>, {{.env.repository}}: {{.Name}}{{.env.Repository}}) {
-    super(find, {{.env.repository}});
+  constructor(search: Search<{{.Name}}, {{.Name}}{{.env.Filter}}>, {{.env.repository}}: {{.Name}}{{.env.Repository}}) {
+    super(search, {{.env.repository}});
   }
 }
 export function {{.env.use}}{{.Name}}{{.env.Service}}(db: DB): {{.Name}}{{.env.Service}} {
-  const {{.env.builder}} = new SearchBuilder<{{.Name}}, {{.Name}}{{.env.Filter}}>(db.query, '{{.table}}', {{.name}}{{.env.Model}}.attributes, db.driver);
+  const {{.env.builder}} = new SearchBuilder<{{.Name}}, {{.Name}}{{.env.Filter}}>(db.query, '{{.table}}', {{.name}}{{.env.Model}}, db.driver);
   const {{.env.repository}} = new Sql{{.Name}}{{.env.Repository}}(db);
   return new {{.Name}}{{.env.Manager}}({{.env.builder}}.search, {{.env.repository}});
 }
-export function {{.env.use}}{{.Name}}{{.env.Controller}}(log: (msg: string) => void, db: DB): {{.Name}}{{.env.Controller}} {
+export function {{.env.use}}{{.Name}}{{.env.Controller}}(log: Log, db: DB): {{.Name}}{{.env.Controller}} {
   return new {{.Name}}{{.env.Controller}}(log, {{.env.use}}{{.Name}}{{.env.Service}}(db));
 }

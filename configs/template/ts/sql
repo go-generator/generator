@@ -6,7 +6,7 @@ export * from './{{.path}}';
 
 export class Sql{{.Name}}{{.env.Repository}} extends Repository<{{.Name}}, {{.tsId}}> implements {{.Name}}{{.env.Repository}} {
   constructor(db: DB) {
-    super(db, '{{.table}}', {{.name}}{{.env.Model}}.attributes);
+    super(db, '{{.table}}', {{.name}}{{.env.Model}});
   }
 }
 export class {{.Name}}{{.env.Manager}} extends Manager<{{.Name}}, {{.tsId}}, {{.Name}}{{.env.Filter}}> implements {{.Name}}{{.env.Service}} {
@@ -21,7 +21,7 @@ export class {{.Name}}{{.env.Controller}} extends Controller<{{.Name}}, {{.tsId}
 }
 
 export function {{.env.use}}{{.Name}}{{.env.Service}}(db: DB): {{.Name}}{{.env.Service}} {
-  const {{.env.builder}} = new SearchBuilder<{{.Name}}, {{.Name}}Filter>(db.query, '{{.table}}', {{.name}}{{.env.Model}}.attributes, db.driver);
+  const {{.env.builder}} = new SearchBuilder<{{.Name}}, {{.Name}}Filter>(db.query, '{{.table}}', {{.name}}{{.env.Model}}, db.driver);
   const {{.env.repository}} = new Sql{{.Name}}{{.env.Repository}}(db);
   return new {{.Name}}{{.env.Manager}}({{.env.builder}}.search, {{.env.repository}});
 }
