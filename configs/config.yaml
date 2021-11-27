@@ -1,6 +1,6 @@
 project: go_sql
-project_name: go-sql-rest-api
+project_name: go-service
 project_path: project
 template: template
-db: mysql
 dbcache: configs/datasource.yaml
+db: sqlite3

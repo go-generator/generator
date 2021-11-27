@@ -5,6 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -14,7 +22,7 @@ import (
 	"github.com/go-generator/core/build"
 	"github.com/go-generator/core/display"
 	"github.com/go-generator/core/export"
-	edb "github.com/go-generator/core/export/db"
+	gdb "github.com/go-generator/core/export/db"
 	"github.com/go-generator/core/export/relationship"
 	uni "github.com/go-generator/core/export/types"
 	"github.com/go-generator/core/generator"
@@ -25,25 +33,18 @@ import (
 	"github.com/skratchdot/open-golang/open"
 	"github.com/sqweek/dialog"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"log"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strconv"
-	"strings"
 )
 
 const (
-	DriverPostgres   = "postgres"
-	DriverMysql      = "mysql"
-	DriverMssql      = "mssql"
-	DriverOracle     = "oracle"
-	DriverSqlite3    = "sqlite3"
+	DriverPostgres = "postgres"
+	DriverMysql    = "mysql"
+	DriverMssql    = "mssql"
+	DriverOracle   = "oracle"
+	DriverSqlite3  = "sqlite3"
 )
 
 // AppScreen shows a panel containing widget
-func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
+func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
 	var files []metadata.File
 	funcMap := template.MakeFuncMap()
 	templatePath, err := filepath.Abs(filepath.Join(".", "configs", c.Template))
@@ -73,13 +74,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 	projectTemplateName := c.Project
 	prjTmplNameEntry := widget.NewSelect(projects, func(o string) {
 		c.Project = o
-		var b bytes.Buffer
-		err = yaml.NewEncoder(&b).Encode(&c)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
-			return
-		}
-		err = ioutil.WriteFile(os.Getenv(project.ConfigEnv), b.Bytes(), os.ModePerm)
+		err = io.SaveConfig(os.Getenv(project.ConfigEnv), c)
 		if err != nil {
 			display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
 			return
@@ -91,6 +86,15 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 
 	projectName := widget.NewEntry()
 	projectName.SetText(c.ProjectName)
+	projectName.OnChanged = func(pjName string) {
+		c.ProjectName = pjName
+		err = io.SaveConfig(os.Getenv(project.ConfigEnv), c)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+			return
+		}
+		projectName.SetText(c.ProjectName)
+	}
 	projectName.SetPlaceHolder("Package name goes here...")
 
 	largeText := widget.NewMultiLineEntry()
@@ -121,10 +125,18 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 		driverEntry.SetSelected(s)
 	})
 	driverEntry.Horizontal = true
-	driverEntry.SetSelected(DriverMysql)
+	driverEntry.SetSelected(c.DB)
 
 	dsnSourceEntry := widget.NewEntry()
 	dsnSourceEntry.OnChanged = func(dsn string) {
+		if driverEntry.Selected != "" {
+			c.DB = driverEntry.Selected
+			err = io.SaveConfig(os.Getenv(project.ConfigEnv), c)
+			if err != nil {
+				display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+				return
+			}
+		}
 		switch driverEntry.Selected {
 		case DriverMysql:
 			dbCache.MySql = dsn
@@ -170,7 +182,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 	listWithData.OnSelected = func(id widget.ListItemID) {
 		keys := dataStruct.Keys()
 		for i := range keys {
-			if strings.HasPrefix(keys[i], strconv.Itoa(id)+".") {
+			if strings.HasPrefix(keys[i], strconv.Itoa(id+1)+".") {
 				v, err := dataStruct.GetValue(keys[i])
 				if err != nil {
 					display.PopUpWindows(err.Error(), canvas)
@@ -250,9 +262,9 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 
 	btnGenerateJSON := widget.NewButtonWithIcon("Generate Project JSON", theme.DocumentCreateIcon(), func() {
 		var (
-			toModels []metadata.Model
-			prj      *metadata.Project
-			pData    bytes.Buffer
+			models []metadata.Model
+			prj    *metadata.Project
+			pData  bytes.Buffer
 		)
 		sqlDB, err := project.ConnectDB(dbCache, driverEntry.Selected)
 		if err != nil {
@@ -272,7 +284,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 			return
 		}
 
-		tables, err := edb.ListTables(ctx, sqlDB, dbName)
+		tables, err := gdb.ListTables(ctx, sqlDB, dbName)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -291,19 +303,20 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 		}
 
 		toUniTypes := uni.Types[driverEntry.Selected]
-		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, relations, toUniTypes, primaryKeys)
+		models, err = export.ToModels(ctx, sqlDB, dbName, tables, relations, toUniTypes, primaryKeys)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
+
 		if modeEntry.Checked {
-			err = enc.Encode(&toModels)
+			err = enc.Encode(&models)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
 				return
 			}
 		} else {
-			prj, err = generator.ExportProject(projectTemplateName, projectName.Text, projectTemplate, toModels, build.InitEnv)
+			prj, err = generator.ExportProject(projectTemplateName, projectName.Text, projectTemplate, models, build.InitEnv)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
 				return
@@ -335,7 +348,6 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 	btnSaveProjectJSON := widget.NewButtonWithIcon("Save JSON", theme.DocumentSaveIcon(), func() {
 		outFile, err := dialog.File().Filter("json", ".json").Title("Save As").Save()
 		if err == dialog.ErrCancelled {
-			display.PopUpWindows(dialog.ErrCancelled.Error(), canvas)
 			return
 		}
 		if err != nil {
@@ -355,7 +367,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 
 	btnGenerate := widget.NewButtonWithIcon("Generate Output", theme.DocumentCreateIcon(), func() {
 		newDataStruct := binding.BindStruct(&metadata.File{})
-		files, err = generator.GenerateFiles(projectName.Text, projectJsonInput.Text, funcMap, templates)
+		files, err = generator.GenerateFiles(projectName.Text, projectJsonInput.Text, templates, funcMap, allTypes)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -380,6 +392,10 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 			return
 		}
 		directory, err := dialog.Directory().Title("Save Project Files In...").Browse()
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
 		directory = directory + string(os.PathSeparator) + projectName.Text
 		err = io.MkDir(directory)
 		if err != nil {

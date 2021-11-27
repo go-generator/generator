@@ -49,6 +49,7 @@
     {
       "name": "model",
       "file": "internal/{{.env.model}}/{{.raw | snake}}.go",
+      "model": true,
       "replace": true
     },
     {

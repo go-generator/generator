@@ -48,6 +48,7 @@
     {
       "name": "model",
       "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}.go",
+      "model": true,
       "replace": true
     },
     {
