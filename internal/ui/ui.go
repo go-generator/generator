@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	s "github.com/core-go/sql"
 	"github.com/go-generator/core"
 	"github.com/go-generator/core/build"
 	"github.com/go-generator/core/display"
@@ -33,6 +32,14 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+)
+
+const (
+	DriverPostgres   = "postgres"
+	DriverMysql      = "mysql"
+	DriverMssql      = "mssql"
+	DriverOracle     = "oracle"
+	DriverSqlite3    = "sqlite3"
 )
 
 // AppScreen shows a panel containing widget
@@ -105,29 +112,29 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[str
 
 	var driverEntry *widget.RadioGroup
 	driverEntry = widget.NewRadioGroup([]string{
-		s.DriverMysql,
-		s.DriverMssql,
-		s.DriverSqlite3,
-		s.DriverOracle,
-		s.DriverPostgres,
+		DriverMysql,
+		DriverMssql,
+		DriverSqlite3,
+		DriverOracle,
+		DriverPostgres,
 	}, func(s string) {
 		driverEntry.SetSelected(s)
 	})
 	driverEntry.Horizontal = true
-	driverEntry.SetSelected(s.DriverMysql)
+	driverEntry.SetSelected(DriverMysql)
 
 	dsnSourceEntry := widget.NewEntry()
 	dsnSourceEntry.OnChanged = func(dsn string) {
 		switch driverEntry.Selected {
-		case s.DriverMysql:
+		case DriverMysql:
 			dbCache.MySql = dsn
-		case s.DriverPostgres:
+		case DriverPostgres:
 			dbCache.Postgres = dsn
-		case s.DriverMssql:
+		case DriverMssql:
 			dbCache.Mssql = dsn
-		case s.DriverSqlite3:
+		case DriverSqlite3:
 			dbCache.Sqlite3 = dsn
-		case s.DriverOracle:
+		case DriverOracle:
 			dbCache.Oracle = dsn
 		}
 	}
