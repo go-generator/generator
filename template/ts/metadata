@@ -6,7 +6,7 @@ export const {{.name}}{{.env.Model}}: Model = {
   attributes: {
 	{{ range $element := .fields }}
 		{{$element.source}} : {
-			{{if eq $element.key true}}key: true,{{end}}{{if ne $element.type "string"}}type: '{{$element.type}}',{{else if ne $element.length 0}}length: {{$element.length}},{{end}}
+			{{if eq $element.key true}}key: true,{{end}}{{if ne $element.type "string"}}type: '{{$element.jstype}}',{{else if ne $element.length 0}}length: {{$element.length}},{{end}}
 		}
 	{{end}}
   }
