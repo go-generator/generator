@@ -3,17 +3,16 @@
   "env": {
     "driver": "mysql",
     "use": "use",
-	"builder": "builder",
-	"repository": "repository",
+    "builder": "builder",
+    "repository": "repository",
     "service": "service",
-	"usecase": "usecase",
+    "usecase_path": "",
     "controller": "controller",
-	"Model": "Model",
+    "Model": "Model",
     "Filter": "Filter",
     "Repository": "Repository",
     "Service": "Service",
-	"Manager": "Manager",
-	"Usecase": "Usecase",
+    "Manager": "Manager",
     "Controller": "Controller",
     "leaf": "true"
   },
@@ -65,12 +64,12 @@
   "entities": [
     {
       "name": "metadata",
-      "file": "src/{{.path}}/{{.path}}.ts",
+      "file": "src/{{.env.usecase_path}}{{.path}}/{{.path}}.ts",
       "replace": true
     },
     {
       "name": "sql",
-      "file": "src/{{.path}}/index.ts",
+      "file": "src/{{.env.usecase_path}}{{.path}}/index.ts",
       "replace": true
     }
   ]

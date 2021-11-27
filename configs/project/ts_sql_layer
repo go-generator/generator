@@ -1,18 +1,22 @@
 {
   "language": "ts",
   "env": {
+    "layer": "true",
     "driver": "mysql",
     "use": "use",
-    "builder": "builder",
+    "metadata": "metadata",
     "repository": "repository",
+    "repository_path": "repository",
     "service": "service",
+    "service_path": "service",
     "controller": "controller",
-    "usecase_path": "",
-    "Model": "Model",
+    "controller_path": "controller",
+	"Model": "Model",
     "Filter": "Filter",
     "Repository": "Repository",
     "Service": "Service",
     "Manager": "Manager",
+    "SearchBuilder": "SearchBuilder",
     "Controller": "Controller",
     "leaf": "true"
   },
@@ -58,26 +62,26 @@
     {
       "name": "route",
       "file": "src/route.ts",
-	  "replace": true
+      "replace": true
     }
   ],
   "entities": [
     {
       "name": "metadata",
-      "file": "src/{{.path}}/{{.path}}.ts",
+      "file": "src/{{.env.metadata}}/{{.path}}.ts",
       "replace": true
     },
     {
       "name": "sql_repository",
-      "file": "src/{{.path}}/sql-{{.path}}-{{.env.repository}}.ts"
+      "file": "src/{{.env.repository_path}}/{{.path}}.ts"
     },
     {
       "name": "controller",
-      "file": "src/{{.path}}/{{.path}}-{{.env.controller}}.ts"
+      "file": "src/{{.env.controller_path}}/{{.path}}.ts"
     },
-	{
-      "name": "sql_service",
-      "file": "src/{{.path}}/index.ts"
+    {
+      "name": "service",
+      "file": "src/{{.env.service_path}}/{{.path}}.ts"
     }
   ]
 }

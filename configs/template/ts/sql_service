@@ -12,11 +12,11 @@ export class {{.Name}}{{.env.Manager}} extends Manager<{{.Name}}, {{.tsId}}, {{.
     super(find, {{.env.repository}});
   }
 }
-export function {{.env.use}}{{.Name}}(db: DB): {{.Name}}Service {
-  const {{.env.builder}} = new SearchBuilder<{{.Name}}, {{.Name}}Filter>(db.query, '{{.table}}', {{.name}}{{.env.Model}}.attributes, db.driver);
+export function {{.env.use}}{{.Name}}{{.env.Service}}(db: DB): {{.Name}}{{.env.Service}} {
+  const {{.env.builder}} = new SearchBuilder<{{.Name}}, {{.Name}}{{.env.Filter}}>(db.query, '{{.table}}', {{.name}}{{.env.Model}}.attributes, db.driver);
   const {{.env.repository}} = new Sql{{.Name}}{{.env.Repository}}(db);
   return new {{.Name}}{{.env.Manager}}({{.env.builder}}.search, {{.env.repository}});
 }
-export function {{.env.use}}{{.Name}}Controller(log: (msg: string) => void, db: DB): {{.Name}}{{.env.Controller}} {
-  return new {{.Name}}{{.env.Controller}}(log, {{.env.use}}{{.Name}}(db));
+export function {{.env.use}}{{.Name}}{{.env.Controller}}(log: (msg: string) => void, db: DB): {{.Name}}{{.env.Controller}} {
+  return new {{.Name}}{{.env.Controller}}(log, {{.env.use}}{{.Name}}{{.env.Service}}(db));
 }
