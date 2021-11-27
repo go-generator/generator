@@ -12,7 +12,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"github.com/core-go/config"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/go-generator/core"
@@ -116,26 +115,12 @@ func main() {
 
 	size := fyne.NewSize(float32(sWidth), float32(sHeight))
 	w.Resize(display.ResizeWindows(70, 60, size))
-	settingsItem := fyne.NewMenuItem("Settings", func() {
-		settingWindows := a.NewWindow("App Settings")
-		r1, err1 := display.SetIcon(os.Getenv(project.AppIconEnv))
-		if err1 != nil {
-			display.PopUpWindows(err1.Error(), canvas)
-			return
-		}
-		settingWindows.SetIcon(r1)
-		settingWindows.SetContent(settings.NewSettings().LoadAppearanceScreen(settingWindows))
-		settingWindows.Resize(display.ResizeWindows(25, 25, size))
-		settingWindows.Show()
-	})
-	w.SetIcon(r)
-	w.SetMainMenu(fyne.NewMainMenu(
-		fyne.NewMenu("Setting", settingsItem)))
-	wContent := ui.AppScreen(ctx, canvas, allTypes, allUniversalTypes, root, dbCache)
+	mainMenu, wContent := ui.AppScreen(ctx, canvas, allTypes, allUniversalTypes, root, dbCache)
 	if wContent == nil {
 		time.Sleep(time.Duration(5) * time.Second)
 		a.Quit()
 	}
+	w.SetMainMenu(mainMenu)
 	w.SetContent(wContent)
 	w.ShowAndRun()
 }

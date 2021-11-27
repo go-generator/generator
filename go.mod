@@ -6,7 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.1.1
 	github.com/core-go/config v0.1.0
 	github.com/denisenkom/go-mssqldb v0.11.0
-	github.com/go-generator/core v0.0.40
+	github.com/go-generator/core v0.0.44
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/godror/godror v0.29.0
 	github.com/lib/pq v1.10.3
@@ -22,6 +22,7 @@ require (
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
+	github.com/gertd/go-pluralize v0.1.7 // indirect
 	github.com/go-gl/gl v0.0.0-20210813123233-e4099ee2221f // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210410170116-ea3d685f79fb // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
@@ -44,6 +45,7 @@ require (
 	github.com/spf13/viper v1.7.1 // indirect
 	github.com/srwiley/oksvg v0.0.0-20200311192757-870daf9aa564 // indirect
 	github.com/srwiley/rasterx v0.0.0-20200120212402-85cb7272f5e9 // indirect
+	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/yuin/goldmark v1.3.8 // indirect

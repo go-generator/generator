@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
@@ -41,44 +42,52 @@ const (
 	DriverSqlite3  = "sqlite3"
 )
 
-// AppScreen shows a panel containing widget
-func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTypes map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
+func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTypes map[string]map[string]string, c metadata.Config, dbCache metadata.Database) (*fyne.MainMenu, fyne.CanvasObject) {
 	var files []metadata.File
 	funcMap := template.MakeFuncMap()
 	templatePath, err := filepath.Abs(filepath.Join(".", "configs", c.Template))
 	if err != nil {
 		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-		return nil
+		return nil, nil
 	}
 	templates, err := io.LoadAll(templatePath)
 	if err != nil {
 		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-		return nil
+		return nil, nil
 	}
 	projectPath, err := filepath.Abs(filepath.Join(".", "configs", c.ProjectPath))
 	if err != nil {
 		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-		return nil
+		return nil, nil
 	}
 	projectTemplate, err := io.Load(projectPath)
 	if err != nil {
 		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-		return nil
+		return nil, nil
 	}
 	projects, err := io.List(projectPath)
 	if err != nil {
 		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-		return nil
+		return nil, nil
 	}
 
 	if len(projects) < 1 {
 		display.PopUpWindows("no database types found", canvas)
-		return nil
+		return nil, nil
 	}
 
+	data := binding.BindStringList(
+		&[]string{},
+	)
+	dataStruct := binding.BindStruct(&metadata.File{})
+
+	openProjectPath := ""
+
+	// Infinite Loading Bar
 	infinite := widget.NewProgressBarInfinite()
 	infinite.Hide()
 
+	// Project Template Entry, go_sql for example
 	projectTemplateName := c.Project
 	prjTmplNameEntry := widget.NewSelect(projects, func(o string) {
 		c.Project = o
@@ -89,10 +98,10 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		}
 		projectTemplateName = o
 	})
-
 	prjTmplNameEntry.PlaceHolder = c.Project
 	prjTmplNameEntry.SetSelected(c.Project)
 
+	//Project Name, default is go-service
 	projectName := widget.NewEntry()
 	projectName.SetText(c.ProjectName)
 	projectName.OnChanged = func(pjName string) {
@@ -123,6 +132,33 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		TabWidth:  0,
 	}
 
+	reloadAll := func() {
+		projectTemplate, err = io.Load(projectPath)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		projects, err = io.List(projectPath)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		templates, err = io.LoadAll(templatePath)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		outputWindows.SetText("")
+		err = data.Set(nil)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		dataStruct = binding.BindStruct(&metadata.File{})
+		projectJsonInput.SetText("")
+	}
+
+	// Driver Entry
 	var driverEntry *widget.RadioGroup
 	driverEntry = widget.NewRadioGroup([]string{
 		DriverMysql,
@@ -136,8 +172,8 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 	driverEntry.Horizontal = true
 	driverEntry.SetSelected(c.DB)
 
-	dsnSourceEntry := widget.NewEntry()
-	dsnSourceEntry.OnChanged = func(dsn string) {
+	datasourceEntry := widget.NewEntry()
+	datasourceEntry.OnChanged = func(dsn string) {
 		if driverEntry.Selected != "" {
 			c.DB = driverEntry.Selected
 			err = io.SaveConfig(os.Getenv(project.ConfigEnv), c)
@@ -176,16 +212,13 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 			}
 		}
 		project.UpdateDBCache(&dbCache, driverEntry.Selected, dsn)
+		reloadAll()
 	}
-	dsnSourceEntry.SetText(project.SelectDSN(dbCache, driverEntry.Selected))
+	datasourceEntry.SetText(project.SelectDSN(dbCache, driverEntry.Selected))
 	driverEntry.OnChanged = func(driver string) {
-		dsnSourceEntry.SetText(project.SelectDSN(dbCache, driver))
+		datasourceEntry.SetText(project.SelectDSN(dbCache, driver))
 	}
 
-	data := binding.BindStringList(
-		&[]string{},
-	)
-	dataStruct := binding.BindStruct(&metadata.File{})
 	listWithData := widget.NewListWithData(data,
 		func() fyne.CanvasObject {
 			return widget.NewLabel("template")
@@ -216,14 +249,17 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		}
 	}
 
-	btnLoadAndGenerate := widget.NewButtonWithIcon("Generate From File", theme.DocumentCreateIcon(), func() {
+	btnLoadAndGenerate := widget.NewButtonWithIcon("Load and Generate", theme.DocumentCreateIcon(), func() {
 		var (
 			prj   metadata.Project
 			pData bytes.Buffer
 		)
 		enc := json.NewEncoder(&pData)
-		enc.SetIndent("", "   ")
+		enc.SetIndent("", "  ")
 		filename, err := dialog.File().Title("Load Metadata File").Filter("All Files").Load()
+		if err == dialog.ErrCancelled {
+			return
+		}
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -400,7 +436,6 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		display.Notify("Success", "Generate Output")
 	})
 
-	openProjectPath := ""
 	btnOpenOutputDirectory := widget.NewButtonWithIcon("Open Output Folder", theme.FolderOpenIcon(), func() {
 		if openProjectPath == "" {
 			display.PopUpWindows("empty project path", canvas)
@@ -413,7 +448,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		}
 	})
 
-	btnSave := widget.NewButtonWithIcon("Save Project", theme.DocumentSaveIcon(), func() {
+	btnSaveProject := widget.NewButtonWithIcon("Save Project", theme.DocumentSaveIcon(), func() {
 		if len(files) < 1 {
 			display.PopUpWindows("output files list is empty", canvas)
 			return
@@ -441,8 +476,8 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 	btnTestDsn := widget.NewButtonWithIcon("Test Connection", theme.CheckButtonCheckedIcon(), func() {
 		infinite.Show()
 		oldDsn := project.SelectDSN(dbCache, driverEntry.Selected)
-		if strings.Compare(oldDsn, dsnSourceEntry.Text) != 0 {
-			project.UpdateDBCache(&dbCache, driverEntry.Selected, dsnSourceEntry.Text)
+		if strings.Compare(oldDsn, datasourceEntry.Text) != 0 {
+			project.UpdateDBCache(&dbCache, driverEntry.Selected, datasourceEntry.Text)
 		}
 		db, err := project.ConnectDB(dbCache, driverEntry.Selected)
 		if err != nil {
@@ -479,50 +514,28 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		display.Notify("Success", "Test Connection")
 	})
 
-	btnReloadTemplates := widget.NewButtonWithIcon("Reload All", theme.ContentRedoIcon(), func() {
-		projectTemplate, err = io.Load(projectPath)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		projects, err = io.List(projectPath)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		templates, err = io.LoadAll(templatePath)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		outputWindows.SetText("")
-		err = data.Set(nil)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		dataStruct = binding.BindStruct(&metadata.File{})
-		projectJsonInput.SetText("")
-	})
+	btnReloadTemplates := widget.NewButtonWithIcon("Reload All", theme.ContentRedoIcon(), reloadAll)
 
 	prScroll := container.NewScroll(projectJsonInput)
 	outScroll := container.NewScroll(outputWindows)
 
 	bottomButtons := container.NewVBox(
 		container.NewAdaptiveGrid(2,
-			btnTestDsn,
 			btnGenerateJSON,
 			btnGenerate,
-			btnLoadAndGenerate,
-			btnSaveProjectJSON,
-			btnSave, btnReloadTemplates, btnOpenOutputDirectory),
+			btnSaveProject,
+			btnTestDsn,
+			btnReloadTemplates,
+			btnOpenOutputDirectory,
+		),
 	)
 
 	tabs := container.NewVBox(container.NewAdaptiveGrid(2, modeEntry, showPathEntry),
 		container.NewAdaptiveGrid(2, widget.NewLabel("Project:"),
 			widget.NewLabel("Package:"),
 			prjTmplNameEntry,
-			projectName), driverEntry, dsnSourceEntry)
+			projectName),
+		driverEntry, datasourceEntry)
 
 	cb1 := container.NewBorder(tabs, bottomButtons, nil, nil, listWithData)
 
@@ -530,5 +543,27 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		prScroll,
 		outScroll,
 	)
-	return container.NewBorder(nil, infinite, cb1, nil, cb2)
+
+	saveJson := fyne.NewMenuItem("Save Project JSON", func() {
+		btnSaveProjectJSON.OnTapped()
+	})
+	load := fyne.NewMenuItem("Load And Generate", func() {
+		btnLoadAndGenerate.OnTapped()
+	})
+	settingsItem := fyne.NewMenuItem("Settings", func() {
+		settingWindows := fyne.CurrentApp().NewWindow("App Settings")
+		r1, err1 := display.SetIcon(os.Getenv(project.AppIconEnv))
+		if err1 != nil {
+			display.PopUpWindows(err1.Error(), canvas)
+			return
+		}
+		settingWindows.SetIcon(r1)
+		settingWindows.SetContent(settings.NewSettings().LoadAppearanceScreen(settingWindows))
+		settingWindows.Show()
+	})
+
+	mainMenu := fyne.NewMainMenu(
+		fyne.NewMenu("File", load, saveJson, settingsItem))
+
+	return mainMenu, container.NewBorder(nil, infinite, cb1, nil, cb2)
 }
