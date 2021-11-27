@@ -1,34 +1,15 @@
-import {Application} from 'express';
-import multer from 'multer';
-import {ApplicationContext} from './context';
+import { Application } from 'express';
+import { ApplicationContext } from './context';
 
 export function route(app: Application, ctx: ApplicationContext): void {
-  const upload = multer();
-
   app.get('/health', ctx.health.check);
-
-  app.get('/roles', ctx.role.all);
-  app.post('/roles/search', ctx.role.search);
-  app.get('/roles/search', ctx.role.search);
-  app.get('/roles/:id', ctx.role.load);
-  app.post('/roles', ctx.role.create);
-  app.put('/roles/:id', ctx.role.update);
-  app.patch('/roles/:id', ctx.role.patch);
-  app.delete('/roles/:id', ctx.role.delete);
-
-  app.post('/{{.name}}s/search', ctx.{{.name}}.search);
-  app.get('/{{.name}}s/search', ctx.{{.name}}.search);
-  app.get('/{{.name}}s/:id', ctx.{{.name}}.load);
-  app.post('/{{.name}}s', ctx.{{.name}}.create);
-  app.put('/{{.name}}s/:id', ctx.{{.name}}.update);
-  app.patch('/{{.name}}s/:id', ctx.{{.name}}.patch);
-  app.delete('/{{.name}}s/:id', ctx.{{.name}}.delete);
-
-  app.get('/uploads', ctx.uploads.all);
-  app.get('/uploads/:id', ctx.uploads.load);
-  app.post('/uploads', upload.single('file'), ctx.uploads.upload);
-  app.post('/uploads/youtube', ctx.uploads.insertData);
-  app.delete('/uploads', ctx.uploads.remove);
-  app.delete('/uploads/youtube', ctx.uploads.deleteData);
-
-}
+  app.patch('/log', ctx.log.config);
+{{ range $element := .collections }}
+  app.post('/{{$element.raws}}/search', ctx.{{$element.name}}.search);
+  app.get('/{{$element.raws}}/search', ctx.{{$element.name}}.search);
+  app.get('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.load);
+  app.post('/{{$element.raws}}', ctx.{{$element.name}}.create);
+  app.put('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.update);
+  app.patch('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.patch);
+  app.delete('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.delete);
+{{end}}|}

@@ -1,0 +1,29 @@
+import { HealthController, LogController, resources } from 'express-ext';
+import { JSONLogger, LogConfig, map } from 'logger-core';
+import { createChecker, DB } from 'query-core';
+import { createValidator } from 'xvalidators';
+{{ range $element := .collections }}
+import { {{$element.Name}}{{.env.Controller}}, {{.env.use}}{{$element.Name}}{{.env.Controller}} } from './{{$element.raw}}';{{end}}
+
+resources.createValidator = createValidator;
+
+export interface Config {
+  port?: number;
+  log: LogConfig;
+}
+export interface ApplicationContext {
+  health: HealthController;
+  log: LogController;{{ range $element := .collections }}
+  {{$element.name}}: {{$element.Name}}{{.env.Controller}}{{end}}
+}
+export function {{.env.use}}Context(db: DB, conf: Config): ApplicationContext {
+  const logger = new JSONLogger(conf.log.level, conf.log.map);
+  const log = new LogController(logger, map);
+
+  const sqlChecker = createChecker(db);
+  const health = new HealthController([sqlChecker]);
+{{ range $element := .collections }}
+  const {{$element.name}} = {{.env.use}}{{$element.Name}}{{.env.Controller}}(logger.error, db);{{end}}
+
+  return { health, log{{ range $element := .collections }}, {{$element.name}}{{end}} };
+}

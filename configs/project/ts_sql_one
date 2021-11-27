@@ -1,0 +1,72 @@
+{
+  "language": "ts",
+  "env": {
+    "use": "use",
+    "usecase": "usecase",
+    "service": "service",
+    "controller": "controller",
+	"Model": "Model",
+    "Filter": "Filter",
+    "Repository": "Repository",
+    "Service": "Service",
+	"Manager": "Manager",
+    "Controller": "Controller",
+    "leaf": "true"
+  },
+  "statics": [
+    {
+      "name": "eslintrc",
+      "file": ".eslintrc.js"
+    },
+    {
+      "name": "tslint",
+      "file": "tslint.json"
+    },
+    {
+      "name": "sql_package",
+      "file": "package.json"
+    },
+    {
+      "name": "tsconfig",
+      "file": "tsconfig.json"
+    },
+    {
+      "name": "env",
+      "file": ".env"
+    },
+    {
+       "name": "sql_config",
+       "file": "src/config.ts"
+    },
+    {
+      "name": "sql_app",
+      "file": "src/app.ts"
+    }
+  ],
+  "arrays": [
+    {
+      "name": "sql_context",
+      "file": "src/context.ts"
+    },
+    {
+      "name": "route",
+      "file": "src/route.ts",
+	  "replace": true
+    }
+  ],
+  "entities": [
+    {
+      "name": "metadata",
+      "file": "src/{{.raw}}/{{.raw}}.ts",
+      "replace": true
+    },
+    {
+      "name": "sql",
+      "file": "src/{{.raw}}/index.ts",
+      "replace": true
+    }
+  ],
+  "type": {
+    "string": "string"
+  }
+}

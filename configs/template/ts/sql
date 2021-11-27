@@ -1,0 +1,30 @@
+import { Controller } from 'express-ext';
+import { Manager, SearchResult } from 'onecore';
+import { DB, Repository, SearchBuilder } from 'query-core';
+import { {{.Name}}, {{.Name}}Filter, {{.name}}{{.env.Model}}, {{.Name}}{{.env.Repository}}, {{.Name}}{{.env.Service}} } from './{{.raw}}';
+export * from './{{.raw}}';
+
+export class Sql{{.Name}}{{.env.Repository}} extends Repository<{{.Name}}, {{.tsId}}> implements {{.Name}}{{.env.Repository}} {
+  constructor(db: DB) {
+    super(db, '{{.table}}', {{.name}}{{.env.Model}}.attributes);
+  }
+}
+export class {{.Name}}{{.env.Manager}} extends Manager<{{.Name}}, {{.tsId}}, {{.Name}}{{.env.Filter}}> implements {{.Name}}{{.env.Service}} {
+  constructor(find: (s: {{.name}}{{.env.Filter}}, limit?: number, offset?: number | string, fields?: string[]) => Promise<SearchResult<{{.Name}}>>, {{.name}}{{.env.Repository}}: {{.Name}}{{.env.Repository}}) {
+    super(find, {{.name}}{{.env.Repository}});
+  }
+}
+export class {{.Name}}{{.env.Controller}} extends Controller<{{.Name}}, {{.tsId}}, {{.Name}}{{.env.Filter}}> {
+  constructor(log: (msg: string) => void, {{.name}}{{.env.Service}}: {{.Name}}{{.env.Service}}) {
+    super(log, {{.name}}{{.env.Service}});
+  }
+}
+
+export function {{.env.use}}{{.Name}}(db: DB): {{.Name}}Service {
+  const builder = new SearchBuilder<{{.Name}}, {{.Name}}Filter>(db.query, '{{.table}}', {{.name}}{{.env.Model}}.attributes, db.driver);
+  const repository = new Sql{{.Name}}{{.env.Repository}}(db);
+  return new {{.Name}}{{.env.Manager}}(builder.search, repository);
+}
+export function {{.env.use}}{{.Name}}Controller(log: (msg: string) => void, db: DB): {{.Name}}{{.env.Controller}} {
+  return new {{.Name}}{{.env.Controller}}(log, {{.env.use}}{{.Name}}(db));
+}
