@@ -157,6 +157,9 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 			}
 			dsnSpecial := bytes.Replace([]byte(dsn), []byte(`\u0026`), []byte("&"), -1)
 			prj.Env["driver"] = driverEntry.Selected
+			if driverEntry.Selected == DriverOracle {
+				prj.Env["driver"] = "godror"
+			}
 			prj.Env["data_source_name"] = string(dsnSpecial)
 			encoder := json.NewEncoder(&buffer)
 			encoder.SetIndent(" ", "  ")
@@ -178,19 +181,6 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 	driverEntry.OnChanged = func(driver string) {
 		dsnSourceEntry.SetText(project.SelectDSN(dbCache, driver))
 	}
-
-	openProjectPath := ""
-	btnOpenOutputDirectory := widget.NewButtonWithIcon("Open Output Folder", theme.FolderOpenIcon(), func() {
-		if openProjectPath == "" {
-			display.PopUpWindows("empty project path", canvas)
-			return
-		}
-		err = open.Run(openProjectPath)
-		if err != nil {
-			display.PopUpWindows(err.Error(), canvas)
-			return
-		}
-	})
 
 	data := binding.BindStringList(
 		&[]string{},
@@ -225,32 +215,6 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 			}
 		}
 	}
-
-	btnReloadTemplates := widget.NewButtonWithIcon("Reload All", theme.ContentRedoIcon(), func() {
-		projectTemplate, err = io.Load(projectPath)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		projects, err = io.List(projectPath)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		templates, err = io.LoadAll(templatePath)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		outputWindows.SetText("")
-		err = data.Set(nil)
-		if err != nil {
-			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
-			return
-		}
-		dataStruct = binding.BindStruct(&metadata.File{})
-		projectJsonInput.SetText("")
-	})
 
 	btnLoadAndGenerate := widget.NewButtonWithIcon("Generate From File", theme.DocumentCreateIcon(), func() {
 		var (
@@ -436,6 +400,19 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		display.Notify("Success", "Generate Output")
 	})
 
+	openProjectPath := ""
+	btnOpenOutputDirectory := widget.NewButtonWithIcon("Open Output Folder", theme.FolderOpenIcon(), func() {
+		if openProjectPath == "" {
+			display.PopUpWindows("empty project path", canvas)
+			return
+		}
+		err = open.Run(openProjectPath)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+	})
+
 	btnSave := widget.NewButtonWithIcon("Save Project", theme.DocumentSaveIcon(), func() {
 		if len(files) < 1 {
 			display.PopUpWindows("output files list is empty", canvas)
@@ -500,6 +477,32 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 		}
 		infinite.Hide()
 		display.Notify("Success", "Test Connection")
+	})
+
+	btnReloadTemplates := widget.NewButtonWithIcon("Reload All", theme.ContentRedoIcon(), func() {
+		projectTemplate, err = io.Load(projectPath)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		projects, err = io.List(projectPath)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		templates, err = io.LoadAll(templatePath)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		outputWindows.SetText("")
+		err = data.Set(nil)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		dataStruct = binding.BindStruct(&metadata.File{})
+		projectJsonInput.SetText("")
 	})
 
 	prScroll := container.NewScroll(projectJsonInput)

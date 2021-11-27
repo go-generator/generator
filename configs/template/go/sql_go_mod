@@ -10,7 +10,7 @@ require (
 	github.com/core-go/service v0.1.8
 	github.com/core-go/sql v0.2.27
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
-	github.com/go-sql-driver/mysql v1.6.0
+	{{.env.driver | go_mod_import}}
 	github.com/gorilla/mux v1.8.0
 	github.com/sirupsen/logrus v1.8.1 // indirect
 )

@@ -1,6 +1,6 @@
 server:
   name: {{.env.project}}
-  port: 8080
+  port: {{.env.port}}
 
 sql:
   driver: {{.env.driver}}
