@@ -3,13 +3,13 @@ import { ApplicationContext } from './context';
 
 export function route(app: Application, ctx: ApplicationContext): void {
   app.get('/health', ctx.health.check);
-  app.patch('/log', ctx.log.config);
-{{ range $element := .collections }}
-  app.post('/{{$element.raws}}/search', ctx.{{$element.name}}.search);
-  app.get('/{{$element.raws}}/search', ctx.{{$element.name}}.search);
-  app.get('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.load);
-  app.post('/{{$element.raws}}', ctx.{{$element.name}}.create);
-  app.put('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.update);
-  app.patch('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.patch);
-  app.delete('/{{$element.raws}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.delete);
+  app.patch('/log', ctx.log.config);{{ range $element := .collections }}
+
+  app.post('/{{$element.paths}}/search', ctx.{{$element.name}}.search);
+  app.get('/{{$element.paths}}/search', ctx.{{$element.name}}.search);
+  app.get('/{{$element.paths}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.load);
+  app.post('/{{$element.paths}}', ctx.{{$element.name}}.create);
+  app.put('/{{$element.paths}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.update);
+  app.patch('/{{$element.paths}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.patch);
+  app.delete('/{{$element.paths}}/{{$element.ts_id_url}}', ctx.{{$element.name}}.delete);
 {{end}}|}

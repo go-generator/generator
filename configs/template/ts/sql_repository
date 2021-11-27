@@ -1,0 +1,8 @@
+import { DB, Repository } from 'query-core';
+import { {{.Name}}, {{.name}}{{.env.Model}}, {{.Name}}{{.env.Repository}} } from './{{.path}}';
+
+export class Sql{{.Name}}{{.env.Repository}} extends Repository<{{.Name}}, {{.tsId}}> implements {{.Name}}{{.env.Repository}} {
+  constructor(db: DB) {
+    super(db, 'users', {{.name}}{{.env.Model}}.attributes);
+  }
+}

@@ -69,9 +69,16 @@
       "replace": true
     },
     {
-      "name": "sql",
-      "file": "src/{{.path}}/index.ts",
-      "replace": true
+      "name": "sql_repository",
+      "file": "src/{{.path}}/sql-{{.path}}-repository.ts"
+    },
+    {
+      "name": "controller",
+      "file": "src/{{.path}}/{{.path}}-controller.ts"
+    },
+	{
+      "name": "sql_service",
+      "file": "src/{{.path}}/index.ts"
     }
   ]
 }

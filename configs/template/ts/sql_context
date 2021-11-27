@@ -7,16 +7,12 @@ import { {{$element.Name}}{{.env.Controller}}, {{.env.use}}{{$element.Name}}{{.e
 
 resources.createValidator = createValidator;
 
-export interface Config {
-  port?: number;
-  log: LogConfig;
-}
 export interface ApplicationContext {
   health: HealthController;
   log: LogController;{{ range $element := .collections }}
-  {{$element.name}}: {{$element.Name}}{{.env.Controller}}{{end}}
+  {{$element.name}}: {{$element.Name}}{{.env.Controller}};{{end}}
 }
-export function {{.env.use}}Context(db: DB, conf: Config): ApplicationContext {
+export function {{.env.use}}Context(db: DB, conf: LogConfig): ApplicationContext {
   const logger = new JSONLogger(conf.log.level, conf.log.map);
   const log = new LogController(logger, map);
 
