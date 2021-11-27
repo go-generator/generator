@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	s "github.com/core-go/sql"
 	"github.com/go-generator/core"
@@ -28,6 +29,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -82,10 +84,15 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		Monospace: true,
 		TabWidth:  0,
 	}
-	outputWindows.Wrapping = fyne.TextWrapBreak
 
 	var driverEntry *widget.RadioGroup
-	driverEntry = widget.NewRadioGroup([]string{s.DriverMysql, s.DriverMssql, s.DriverSqlite3, s.DriverPostgres, s.DriverOracle}, func(s string) {
+	driverEntry = widget.NewRadioGroup([]string{
+		s.DriverMysql,
+		s.DriverMssql,
+		s.DriverSqlite3,
+		s.DriverOracle,
+		s.DriverPostgres,
+	}, func(s string) {
 		driverEntry.SetSelected(s)
 	})
 	driverEntry.Horizontal = true
@@ -111,58 +118,10 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		dsnSourceEntry.SetText(project.SelectDSN(dbCache, driver))
 	}
 
-	var output metadata.Output
-	loadPrJson := widget.NewButton("Load Metadata File and Generate", func() {
-		filename, err := dialog.File().Title("Load Metadata File").Filter("All Files").Load()
-		if err != nil {
-			display.PopUpWindows(err.Error(), canvas)
-			return
-		} else {
-			output, err = generator.GenerateFromFile(langTmpl, projectName.Text, filename, loader.LoadProject, generator.InitEnv, build.BuildModel)
-			if err != nil {
-				display.PopUpWindows(err.Error(), canvas)
-				return
-			} else {
-				result, err := generator.ToString(output.Files)
-				if err != nil {
-					display.PopUpWindows(err.Error(), canvas)
-					return
-				}
-				outputWindows.SetText(result)
-				notifySuccess("Generate Successfully")
-				//directory, err := dialog.Directory().Title("Save Project Files In...").Browse()
-				//if output.Directory != "" {
-				//	directory = directory + string(os.PathSeparator) + output.Directory
-				//	err = io.MkDir(directory)
-				//	if err != nil {
-				//		return
-				//	}
-				//}
-				//err1 := io.SaveOutput(directory, output)
-				//if err1 != nil {
-				//	display.PopUpWindows(err1.Error(), canvas)
-				//	return
-				//}
-			}
-		}
-	})
-
-	projectJsonInput := widget.NewMultiLineEntry()
-	projectJsonInput.SetPlaceHolder("Input Project JSON here...")
-	projectJsonInput.Wrapping = fyne.TextWrapWord
-
-	var optimizeEntry *widget.Check
-	optimizeEntry = widget.NewCheck("Models Only", func(b bool) {
-		optimizeEntry.SetChecked(b)
-	})
-	optimizeEntry.SetChecked(false)
-
 	data := binding.BindStringList(
 		&[]string{},
 	)
-
 	dataStruct := binding.BindStruct(&metadata.File{})
-
 	list := widget.NewListWithData(data,
 		func() fyne.CanvasObject {
 			return widget.NewLabel("template")
@@ -181,9 +140,12 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 					return
 				}
 				if content, ok := v.(string); ok {
-					var b strings.Builder
-					b.WriteString(content)
-					outputWindows.SetText(b.String())
+					if runtime.GOOS == "windows" {
+						content = strings.ReplaceAll(content, "\r", "")
+					} else {
+						content = strings.ReplaceAll(content, "\n", "")
+					}
+					outputWindows.SetText(content)
 				} else {
 					display.PopUpWindows("error setting content", canvas)
 				}
@@ -191,7 +153,38 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		}
 	}
 
-	connectGenerate := widget.NewButton("Connect and Generate", func() {
+	var output metadata.Output
+	loadPrJson := widget.NewButtonWithIcon("Generate From File", theme.DocumentCreateIcon(), func() {
+		filename, err := dialog.File().Title("Load Metadata File").Filter("All Files").Load()
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		} else {
+			output, err = generator.GenerateFromFile(langTmpl, projectName.Text, filename, loader.LoadProject, generator.InitEnv, build.BuildModel)
+			if err != nil {
+				display.PopUpWindows(err.Error(), canvas)
+				return
+			} else {
+				err = generateFilesList(data, dataStruct, output.Files)
+				if err != nil {
+					display.PopUpWindows(err.Error(), canvas)
+					return
+				}
+				notifySuccess("Generate Successfully")
+			}
+		}
+	})
+
+	projectJsonInput := widget.NewMultiLineEntry()
+	projectJsonInput.SetPlaceHolder("Input Project JSON here...")
+
+	var optimizeEntry *widget.Check
+	optimizeEntry = widget.NewCheck("Models Only", func(b bool) {
+		optimizeEntry.SetChecked(b)
+	})
+	optimizeEntry.SetChecked(false)
+
+	connectGenerate := widget.NewButtonWithIcon("Generate Project JSON", theme.DocumentCreateIcon(), func() {
 		var (
 			toModels []metadata.Model
 			prj      *metadata.Project
@@ -275,11 +268,14 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		notifySuccess("Generated Successfully")
 	})
 
-	saveProjectJson := widget.NewButton("Save Project JSON Input", func() {
+	saveProjectJson := widget.NewButtonWithIcon("Save JSON", theme.DocumentSaveIcon(), func() {
 		outFile, err := dialog.File().Filter("json", ".json").Title("Save As").Save()
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
+		}
+		if filepath.Ext(outFile) != ".json" {
+			outFile += ".json"
 		}
 		err = io.SaveContent(outFile, projectJsonInput.Text)
 		if err != nil {
@@ -289,8 +285,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		notifySuccess("Saved Successfully")
 	})
 
-	prScroll := container.NewScroll(projectJsonInput)
-	generateButton := widget.NewButton("Generate From Project JSON Input", func() {
+	generateButton := widget.NewButtonWithIcon("Generate Output", theme.DocumentCreateIcon(), func() {
 		prj, err := generator.DecodeProject([]byte(projectJsonInput.Text), projectName.Text, generator.InitEnv)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
@@ -301,28 +296,41 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
-		for i := range files {
-			err = data.Append(strconv.Itoa(i) + ". " + files[i].Name)
-			if err != nil {
-				display.PopUpWindows(err.Error(), canvas)
-				return
-			}
-			err = dataStruct.SetValue(strconv.Itoa(i)+". "+files[i].Name, files[i].Content)
-			if err != nil {
-				display.PopUpWindows(err.Error(), canvas)
-				return
-			}
+		err = data.Set(nil)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
 		}
-		//result, err := generator.ToString(files)
-		//if err != nil {
-		//	display.PopUpWindows(err.Error(), canvas)
-		//	return
-		//}
-		//outputWindows.SetText(result)
+		err = generateFilesList(data, dataStruct, files)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
 		notifySuccess("Generated Successfully")
 	})
 
-	testDsn := widget.NewButton("Test Connection", func() {
+	generateProject := widget.NewButtonWithIcon("Save Project", theme.DocumentSaveIcon(), func() {
+		if outputWindows.Text == "" {
+			display.PopUpWindows("output is empty", canvas)
+			return
+		}
+		directory, err := dialog.Directory().Title("Save Project Files In...").Browse()
+		if output.Directory != "" {
+			directory = directory + string(os.PathSeparator) + output.Directory
+			err = io.MkDir(directory)
+			if err != nil {
+				return
+			}
+		}
+		err1 := io.SaveOutput(directory, output)
+		if err1 != nil {
+			display.PopUpWindows(err1.Error(), canvas)
+			return
+		}
+		notifySuccess("Files Saved")
+	})
+
+	testDsn := widget.NewButtonWithIcon("Test Connection", theme.CheckButtonCheckedIcon(), func() {
 		driver := driverEntry.Selected
 		if driver == s.DriverOracle {
 			driver = "godror"
@@ -346,31 +354,36 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		notifySuccess("Connected Successfully")
 	})
 
+	prScroll := container.NewScroll(projectJsonInput)
+	outScroll := container.NewScroll(outputWindows)
+
 	bottomButtons := container.NewVBox(
-		testDsn,
-		connectGenerate,
-		generateButton,
-		saveProjectJson,
-		loadPrJson,
-	)
-	dirBox := container.NewVBox(
-		optimizeEntry,
-		widget.NewTextGridFromString("Datasource name:"),
-		driverEntry,
-		dsnSourceEntry,
-		//container.NewHSplit(widget.NewTextGridFromString("Project name:"), projectName),
-		//container.NewHSplit(widget.NewTextGridFromString("Project Template:"), prjTmplNameEntry),
-		widget.NewTextGridFromString("Project name:"),
-		projectName,
-		widget.NewTextGridFromString("Project template name:"),
-		prjTmplNameEntry,
+		container.NewAdaptiveGrid(2,
+			testDsn,
+			connectGenerate,
+			generateButton,
+			loadPrJson,
+			saveProjectJson,
+			generateProject),
 	)
 
-	cb1 := container.NewBorder(dirBox, bottomButtons, nil, nil, prScroll)
+	tabs := container.NewAppTabs(
+		container.NewTabItem("Driver", driverEntry),
+		container.NewTabItem("Datasource", dsnSourceEntry),
+		container.NewTabItem("Project Name", projectName),
+		container.NewTabItem("Template Name", prjTmplNameEntry),
+		//container.NewTabItem("Files List", list),
+	)
 
-	cb2 := container.NewHSplit(container.NewScroll(outputWindows), list)
+	cb1 := container.NewBorder(tabs, bottomButtons, nil, nil, list)
 
-	return container.NewHSplit(cb1, cb2)
+	cb2 := container.NewHSplit(
+		prScroll,
+		outScroll,
+	)
+	return container.NewBorder(nil, nil, cb1, nil, cb2)
+
+	//return container.NewHSplit(cb1, cb2)
 }
 
 func LoadAllLanguageTemplates(directory string) (map[string]map[string]string, error) {
@@ -395,4 +408,23 @@ func LoadAllLanguageTemplates(directory string) (map[string]map[string]string, e
 		projTmpl[folder] = tm
 	}
 	return projTmpl, err
+}
+
+func generateFilesList(data binding.ExternalStringList, dataSt binding.Struct, files []metadata.File) error {
+	err := data.Set(nil)
+	if err != nil {
+		return err
+	}
+	for i := range files {
+		filename := strconv.Itoa(i) + ". " + filepath.Base(files[i].Name)
+		err = data.Append(filename)
+		if err != nil {
+			return err
+		}
+		err = dataSt.SetValue(filename, files[i].Content)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

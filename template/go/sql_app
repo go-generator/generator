@@ -11,15 +11,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"{{if .env.layer}}
 	. "{{.env.go_module}}/internal/{{.env.handler}}"
-	. "{{.env.go_module}}/internal/{{.env.model}}"
-{{end}}{{ range $element := .collections }}
-	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.name}}"
-{{end}})
+	. "{{.env.go_module}}/internal/{{.env.model}}"{{end}}{{ range $element := .collections }}
+	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.name}}"{{end}})
 
 type ApplicationContext struct {
 	HealthHandler *health.Handler{{ range $element := .collections }}
-	{{$element.Name}}{{.env.Handler}} {{$element.Name}}{{.env.Handler}}
-{{end}}}
+	{{$element.Name}}{{.env.Handler}} {{$element.Name}}{{.env.Handler}}{{end}}
+}
 
 func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
 	db, err := q.OpenByConfig(root.Sql)
@@ -43,15 +41,13 @@ func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
        	return nil, err
     }
     {{$element.name}}{{.env.Service}} := New{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.Repository}})
-    {{$element.name}}{{.env.Handler}} := New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
-{{end}}
+    {{$element.name}}{{.env.Handler}} := New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action){{end}}
+
 	sqlChecker := q.NewHealthChecker(db)
 	healthHandler := health.NewHandler(sqlChecker)
 
 	return &ApplicationContext{
-		HealthHandler: healthHandler,
-		{{ range $element := .collections }}
-        {{$element.Name}}{{$element.env.Handler}}: {{$element.name}}{{$element.env.Handler}},
-{{end}}
+		HealthHandler: healthHandler,{{ range $element := .collections }}
+        {{$element.Name}}{{$element.env.Handler}}: {{$element.name}}{{$element.env.Handler}},{{end}}
 	}, nil
 }
