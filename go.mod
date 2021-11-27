@@ -7,7 +7,7 @@ require (
 	github.com/core-go/config v0.1.0
 	github.com/core-go/sql v0.2.32
 	github.com/denisenkom/go-mssqldb v0.11.0
-	github.com/go-generator/core v0.0.16
+	github.com/go-generator/core v0.0.17
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/godror/godror v0.29.0
 	github.com/lib/pq v1.10.3
