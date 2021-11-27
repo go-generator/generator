@@ -7,13 +7,14 @@ require (
 	github.com/core-go/config v0.1.0
 	github.com/core-go/sql v0.2.32
 	github.com/denisenkom/go-mssqldb v0.11.0
-	github.com/go-generator/core v0.0.8
+	github.com/go-generator/core v0.0.12
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/godror/godror v0.29.0
 	github.com/lib/pq v1.10.3
 	github.com/mattn/go-sqlite3 v1.14.9
+	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/sqweek/dialog v0.0.0-20211002065838-9a201b55ab91
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 require (
@@ -54,5 +55,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

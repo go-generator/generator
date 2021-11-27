@@ -1,8 +1,9 @@
-package {{.name}}
+package {{.name | snake}}
 
 import (
 	"context"
 	sv "github.com/core-go/service"{{if .env.layer}}
+
 	. "{{.env.go_module}}/internal/{{.env.model}}"{{end}}
 )
 

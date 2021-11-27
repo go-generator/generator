@@ -19,6 +19,10 @@
       "file": "go.mod"
     },
     {
+       "name": "sql_go_sum",
+       "file": "go.sum"
+    },
+    {
       "name": "main",
       "file": "main.go"
     },
@@ -44,19 +48,19 @@
   "entities": [
     {
       "name": "model",
-      "file": "internal/{{.env.model}}/{{.raw}}.go"
+      "file": "internal/{{.env.model}}/{{.raw | snake}}.go"
     },
     {
       "name": "filter",
-      "file": "internal/{{.env.filter}}/{{.raw}}_filter.go"
+      "file": "internal/{{.env.filter}}/{{.raw | snake}}_filter.go"
     },
     {
       "name": "service",
-      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_service.go"
+      "file": "internal/{{.env.usecase}}/{{.raw | snake}}/{{.raw}}_service.go"
     },
     {
       "name": "handler",
-      "file": "internal{{.env.handler}}/{{.raw}}_handler.go"
+      "file": "internal/{{.env.handler}}/{{.raw | snake}}_handler.go"
     }
   ],
   "type": {

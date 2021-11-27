@@ -9,10 +9,12 @@ import (
 	q "github.com/core-go/sql"
 	"github.com/core-go/sql/query"
 	_ "github.com/go-sql-driver/mysql"
-	"reflect"{{if .env.layer}}
+	"reflect"
+	{{if .env.layer}}
 	. "{{.env.go_module}}/internal/{{.env.handler}}"
 	. "{{.env.go_module}}/internal/{{.env.model}}"{{end}}{{ range $element := .collections }}
-	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.name}}"{{end}})
+	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.raw}}"
+{{end}})
 
 type ApplicationContext struct {
 	HealthHandler *health.Handler{{ range $element := .collections }}
@@ -29,7 +31,7 @@ func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
 	action := sv.InitializeAction(root.Action)
 	validator := v.NewValidator()
 
-    {{ range $element := .collections }}
+{{ range $element := .collections }}
     {{$element.name}}Type := reflect.TypeOf({{$element.Name}}{})
     {{$element.name}}QueryBuilder := query.NewBuilder(db, "{{$element.table}}", {{$element.name}}Type)
     {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}QueryBuilder.BuildQuery)
@@ -41,7 +43,8 @@ func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
        	return nil, err
     }
     {{$element.name}}{{.env.Service}} := New{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.Repository}})
-    {{$element.name}}{{.env.Handler}} := New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action){{end}}
+    {{$element.name}}{{.env.Handler}} := New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
+{{end}}
 
 	sqlChecker := q.NewHealthChecker(db)
 	healthHandler := health.NewHandler(sqlChecker)

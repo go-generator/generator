@@ -3,7 +3,6 @@ package ui
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -22,10 +21,10 @@ import (
 	"github.com/go-generator/core/io"
 	"github.com/go-generator/core/loader"
 	"github.com/go-generator/core/project"
-	"github.com/go-generator/core/types"
+	st "github.com/go-generator/core/strings"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/sqweek/dialog"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"path/filepath"
@@ -35,16 +34,22 @@ import (
 )
 
 func notifySuccess(content string) {
-	fyne.CurrentApp().SendNotification(fyne.NewNotification("Message", content))
+	fyne.CurrentApp().SendNotification(fyne.NewNotification("Generator", content))
 }
 
 // WidgetScreen shows a panel containing widget
 func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
+	var (
+		files  []metadata.File
+		output metadata.Output
+	)
+	funcMap := st.MakeFuncMap()
+
 	tmplPath, err := filepath.Abs(filepath.Join(".", r.TemplatePath))
 	if err != nil {
 		log.Fatal(err)
 	}
-	langTmpl, err := LoadAllLanguageTemplates(tmplPath)
+	langTmpl, err := loadAllLanguageTemplates(tmplPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,15 +66,17 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		log.Fatal(err)
 	}
 
-	prjTypeName := r.PrjTmplName
+	if len(prjTypes) < 1 {
+		log.Fatal("no project type found")
+	}
+	prjTmplName := prjTypes[0]
 	prjTmplNameEntry := widget.NewSelect(prjTypes, func(o string) {
-		prjTypeName = o
+		prjTmplName = o
 	})
-	prjTmplNameEntry.Selected = r.PrjTmplName
 
 	projectName := widget.NewEntry()
 	projectName.SetText(r.ProjectName)
-	projectName.SetPlaceHolder("Project Name:")
+	projectName.SetPlaceHolder("Package name goes here...")
 
 	largeText := widget.NewMultiLineEntry()
 	largeText.SetPlaceHolder("Input")
@@ -97,6 +104,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 	})
 	driverEntry.Horizontal = true
 	driverEntry.SetSelected(s.DriverMysql)
+
 	dsnSourceEntry := widget.NewEntry()
 	dsnSourceEntry.OnChanged = func(dsn string) {
 		switch driverEntry.Selected {
@@ -113,10 +121,22 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		}
 	}
 	dsnSourceEntry.SetText(project.SelectDSN(dbCache, driverEntry.Selected))
-
 	driverEntry.OnChanged = func(driver string) {
 		dsnSourceEntry.SetText(project.SelectDSN(dbCache, driver))
 	}
+
+	openProjectPath := ""
+	openButton := widget.NewButtonWithIcon("Open Output Folder", theme.FolderOpenIcon(), func() {
+		if openProjectPath == "" {
+			display.PopUpWindows("empty project path", canvas)
+			return
+		}
+		err = open.Run(openProjectPath)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+	})
 
 	data := binding.BindStringList(
 		&[]string{},
@@ -129,7 +149,6 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		func(i binding.DataItem, o fyne.CanvasObject) {
 			o.(*widget.Label).Bind(i.(binding.String))
 		})
-
 	list.OnSelected = func(id widget.ListItemID) {
 		keys := dataStruct.Keys()
 		for i := range keys {
@@ -153,14 +172,13 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		}
 	}
 
-	var output metadata.Output
 	loadPrJson := widget.NewButtonWithIcon("Generate From File", theme.DocumentCreateIcon(), func() {
 		filename, err := dialog.File().Title("Load Metadata File").Filter("All Files").Load()
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		} else {
-			output, err = generator.GenerateFromFile(langTmpl, projectName.Text, filename, loader.LoadProject, generator.InitEnv, build.BuildModel)
+			output, err = generator.GenerateFromFile(funcMap, langTmpl, projectName.Text, filename, loader.LoadProject, generator.InitEnv, build.BuildModel)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
 				return
@@ -218,8 +236,8 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
-		t := uni.Types[driverEntry.Selected]
-		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, rt, t)
+		toUniTypes := uni.Types[driverEntry.Selected]
+		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, rt, toUniTypes)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -231,22 +249,14 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 				return
 			}
 		} else {
-			prj, err = generator.ExportProject(projTmpl, r.PrjTmplName, projectName.Text, toModels, generator.InitEnv)
+			prj, err = generator.ExportProject(prjTmplName, projectName.Text, projTmpl, toModels, generator.InitEnv)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
 				return
 			}
-			exTypes, ok := types.Types[prj.Language]
-			if !ok {
-				log.Fatal("missing export type for current language")
-			}
-			for i := range prj.Models {
-				for j := range prj.Models[i].Fields {
-					if _, ok := exTypes[prj.Models[i].Fields[j].Type]; !ok {
-						continue
-					}
-					prj.Models[i].Fields[j].Type = exTypes[prj.Models[i].Fields[j].Type] // converse from universal time to go type
-				}
+			_, ok := prj.Env["go_module"]
+			if ok && projectName.Text != "" {
+				prj.Env["go_module"] = projectName.Text
 			}
 			err = enc.Encode(&prj)
 			if err != nil {
@@ -270,6 +280,10 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 
 	saveProjectJson := widget.NewButtonWithIcon("Save JSON", theme.DocumentSaveIcon(), func() {
 		outFile, err := dialog.File().Filter("json", ".json").Title("Save As").Save()
+		if err == dialog.ErrCancelled {
+			display.PopUpWindows(dialog.ErrCancelled.Error(), canvas)
+			return
+		}
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -286,12 +300,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 	})
 
 	generateButton := widget.NewButtonWithIcon("Generate Output", theme.DocumentCreateIcon(), func() {
-		prj, err := generator.DecodeProject([]byte(projectJsonInput.Text), projectName.Text, generator.InitEnv)
-		if err != nil {
-			display.PopUpWindows(err.Error(), canvas)
-			return
-		}
-		files, err := generator.Generate(prj, langTmpl[prj.Language], build.BuildModel)
+		files, err = generateProjectFiles(projectName.Text, projectJsonInput.Text, funcMap, langTmpl)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -310,32 +319,32 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 	})
 
 	generateProject := widget.NewButtonWithIcon("Save Project", theme.DocumentSaveIcon(), func() {
-		if outputWindows.Text == "" {
-			display.PopUpWindows("output is empty", canvas)
+		if len(files) < 1 {
+			display.PopUpWindows("output files list is empty", canvas)
 			return
 		}
 		directory, err := dialog.Directory().Title("Save Project Files In...").Browse()
-		if output.Directory != "" {
-			directory = directory + string(os.PathSeparator) + output.Directory
-			err = io.MkDir(directory)
-			if err != nil {
-				return
-			}
+		directory = directory + string(os.PathSeparator) + projectName.Text
+		err = io.MkDir(directory)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
 		}
-		err1 := io.SaveOutput(directory, output)
-		if err1 != nil {
-			display.PopUpWindows(err1.Error(), canvas)
+		openProjectPath = directory
+		err = io.SaveFiles(directory, files)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
 		notifySuccess("Files Saved")
 	})
 
 	testDsn := widget.NewButtonWithIcon("Test Connection", theme.CheckButtonCheckedIcon(), func() {
-		driver := driverEntry.Selected
-		if driver == s.DriverOracle {
-			driver = "godror"
+		oldDsn := project.SelectDSN(dbCache, driverEntry.Selected)
+		if strings.Compare(oldDsn, dsnSourceEntry.Text) != 0 {
+			project.UpdateDBCache(&dbCache, driverEntry.Selected, dsnSourceEntry.Text)
 		}
-		db, err := sql.Open(driver, dsnSourceEntry.Text)
+		db, err := project.ConnectDB(dbCache, driverEntry.Selected)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -364,16 +373,14 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 			generateButton,
 			loadPrJson,
 			saveProjectJson,
-			generateProject),
+			generateProject), openButton,
 	)
 
-	tabs := container.NewAppTabs(
-		container.NewTabItem("Driver", driverEntry),
-		container.NewTabItem("Datasource", dsnSourceEntry),
-		container.NewTabItem("Project Name", projectName),
-		container.NewTabItem("Template Name", prjTmplNameEntry),
-		//container.NewTabItem("Files List", list),
-	)
+	tabs := container.NewVBox(
+		container.NewAdaptiveGrid(2, widget.NewLabel("Project:"),
+			widget.NewLabel("Package:"),
+			prjTmplNameEntry,
+			projectName), driverEntry, dsnSourceEntry)
 
 	cb1 := container.NewBorder(tabs, bottomButtons, nil, nil, list)
 
@@ -382,49 +389,4 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		outScroll,
 	)
 	return container.NewBorder(nil, nil, cb1, nil, cb2)
-
-	//return container.NewHSplit(cb1, cb2)
-}
-
-func LoadAllLanguageTemplates(directory string) (map[string]map[string]string, error) {
-	projTmpl := make(map[string]map[string]string)
-	folders, err := io.List(directory)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, folder := range folders {
-		names, err := io.List(filepath.Join(directory, folder))
-		if err != nil {
-			return nil, err
-		}
-		tm := make(map[string]string, 0)
-		for _, n := range names {
-			content, err := ioutil.ReadFile(directory + string(os.PathSeparator) + folder + string(os.PathSeparator) + n)
-			if err != nil {
-				return nil, err
-			}
-			tm[n] = string(content)
-		}
-		projTmpl[folder] = tm
-	}
-	return projTmpl, err
-}
-
-func generateFilesList(data binding.ExternalStringList, dataSt binding.Struct, files []metadata.File) error {
-	err := data.Set(nil)
-	if err != nil {
-		return err
-	}
-	for i := range files {
-		filename := strconv.Itoa(i) + ". " + filepath.Base(files[i].Name)
-		err = data.Append(filename)
-		if err != nil {
-			return err
-		}
-		err = dataSt.SetValue(filename, files[i].Content)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

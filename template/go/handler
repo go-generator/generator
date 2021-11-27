@@ -1,4 +1,4 @@
-package {{.name}}
+package {{if .env.layer}}handler{{else}}{{.name | snake}}{{end}}
 
 import (
 	"context"
@@ -6,9 +6,10 @@ import (
 	sv "github.com/core-go/service"
 	"net/http"
 	"reflect"{{if .env.layer}}
+
 	. "{{.env.go_module}}/internal/{{.env.filter}}"
 	. "{{.env.go_module}}/internal/{{.env.model}}"
-	. "{{.env.go_module}}/internal{{.env.usecase}}/{{.name}}"{{end}}
+	. "{{.env.go_module}}/internal{{.env.usecase}}/{{.name | snake}}"{{end}}
 )
 
 type {{.Name}}{{.env.Handler}} interface {

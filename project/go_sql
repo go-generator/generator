@@ -1,7 +1,7 @@
 {
   "language": "go",
   "env": {
-    "go_module": "{{.env.project}}",
+    "go_module": "go-service",
     "usecase": "/usecase",
     "model": "model",
     "filter": "filter",
@@ -16,6 +16,10 @@
     {
       "name": "sql_go_mod",
       "file": "go.mod"
+    },
+    {
+       "name": "sql_go_sum",
+       "file": "go.sum"
     },
     {
       "name": "main",
