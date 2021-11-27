@@ -9,26 +9,14 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/go-generator/core"
 	"github.com/go-generator/core/display"
+	"github.com/go-generator/core/export/types"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/godror/godror"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"go-generator/internal/ui"
 	"log"
-	"path/filepath"
 )
-
-func setIcon(path string) (fyne.Resource, error) {
-	settingIcon, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
-	}
-	r2, err1 := fyne.LoadResourceFromPath(settingIcon)
-	if err1 != nil {
-		return nil, err1
-	}
-	return r2, nil
-}
 
 func main() {
 	ctx := context.TODO()
@@ -45,7 +33,7 @@ func main() {
 	}
 
 	a := app.NewWithID("Generator")
-	r, err1 := setIcon("./icons/icon.png")
+	r, err1 := display.SetIcon("./icons/icon.png")
 	if err1 != nil {
 		log.Fatal(err1)
 	}
@@ -61,7 +49,7 @@ func main() {
 	w.Resize(display.ResizeWindows(70, 60, size))
 	settingsItem := fyne.NewMenuItem("Settings", func() {
 		wi := a.NewWindow("App Settings")
-		r1, err1 := setIcon("./icons/app.jpg")
+		r1, err1 := display.SetIcon("./icons/app.jpg")
 		if err1 != nil {
 			display.PopUpWindows(err1.Error(), canvas)
 			return
@@ -74,7 +62,7 @@ func main() {
 	w.SetIcon(r)
 	w.SetMainMenu(fyne.NewMainMenu(fyne.NewMenu("Setting", settingsItem)))
 
-	wContent := ui.WidgetScreen(ctx, canvas, root, dbCache)
+	wContent := ui.WidgetScreen(ctx, canvas, types.Types, root, dbCache)
 	w.SetContent(wContent)
 	w.SetMaster()
 	w.CenterOnScreen()

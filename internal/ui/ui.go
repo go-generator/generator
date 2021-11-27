@@ -16,7 +16,6 @@ import (
 	"github.com/go-generator/core/export"
 	edb "github.com/go-generator/core/export/db"
 	"github.com/go-generator/core/export/relationship"
-	uni "github.com/go-generator/core/export/types"
 	"github.com/go-generator/core/generator"
 	"github.com/go-generator/core/io"
 	"github.com/go-generator/core/list"
@@ -35,42 +34,42 @@ import (
 )
 
 // WidgetScreen shows a panel containing widget
-func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
+func WidgetScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
 	var files []metadata.File
 
 	funcMap := template.MakeFuncMap()
 
-	tmplPath, err := filepath.Abs(filepath.Join(".", r.Template))
+	templatePath, err := filepath.Abs(filepath.Join(".", c.Template))
 	if err != nil {
 		log.Fatal(err)
 	}
-	langTmpl, err := io.LoadAll(tmplPath)
+	templates, err := io.LoadAll(templatePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	pPath, err := filepath.Abs(filepath.Join(".", r.ProjectPath))
+	projectPath, err := filepath.Abs(filepath.Join(".", c.ProjectPath))
 	if err != nil {
 		log.Fatal(err)
 	}
-	projTmpl, err := io.Load(pPath)
+	projectTemplate, err := io.Load(projectPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	prjTypes, err := io.List(pPath)
+	projects, err := io.List(projectPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if len(prjTypes) < 1 {
+	if len(projects) < 1 {
 		log.Fatal("no project type found")
 	}
-	prjTmplName := prjTypes[0]
-	prjTmplNameEntry := widget.NewSelect(prjTypes, func(o string) {
-		prjTmplName = o
+	projectTemplateName := projects[0]
+	prjTmplNameEntry := widget.NewSelect(projects, func(o string) {
+		projectTemplateName = o
 	})
 
 	projectName := widget.NewEntry()
-	projectName.SetText(r.ProjectName)
+	projectName.SetText(c.ProjectName)
 	projectName.SetPlaceHolder("Package name goes here...")
 
 	largeText := widget.NewMultiLineEntry()
@@ -124,7 +123,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 	}
 
 	openProjectPath := ""
-	openButton := widget.NewButtonWithIcon("Open Output Folder", theme.FolderOpenIcon(), func() {
+	btnOpenOutputDirectory := widget.NewButtonWithIcon("Open Output Folder", theme.FolderOpenIcon(), func() {
 		if openProjectPath == "" {
 			display.PopUpWindows("empty project path", canvas)
 			return
@@ -170,16 +169,16 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		}
 	}
 
-	reloadAllTemplate := widget.NewButtonWithIcon("Reload Template", theme.ContentRedoIcon(), func() {
-		projTmpl, err = io.Load(pPath)
+	btnReloadTemplates := widget.NewButtonWithIcon("Reload Template", theme.ContentRedoIcon(), func() {
+		projectTemplate, err = io.Load(projectPath)
 		if err != nil {
 			log.Fatal(err)
 		}
-		prjTypes, err = io.List(pPath)
+		projects, err = io.List(projectPath)
 		if err != nil {
 			log.Fatal(err)
 		}
-		langTmpl, err = io.LoadAll(tmplPath)
+		templates, err = io.LoadAll(templatePath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -187,7 +186,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		listWithData.UnselectAll()
 	})
 
-	loadPrJson := widget.NewButtonWithIcon("Generate From File", theme.DocumentCreateIcon(), func() {
+	btnLoadAndGenerate := widget.NewButtonWithIcon("Generate From File", theme.DocumentCreateIcon(), func() {
 		var (
 			prj   metadata.Project
 			pData bytes.Buffer
@@ -222,13 +221,13 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		}
 	})
 
-	var optimizeEntry *widget.Check
-	optimizeEntry = widget.NewCheck("Models Only", func(b bool) {
-		optimizeEntry.SetChecked(b)
+	var modeEntry *widget.Check
+	modeEntry = widget.NewCheck("Models Only", func(b bool) {
+		modeEntry.SetChecked(b)
 	})
-	optimizeEntry.SetChecked(false)
+	modeEntry.SetChecked(false)
 
-	connectGenerate := widget.NewButtonWithIcon("Generate Project JSON", theme.DocumentCreateIcon(), func() {
+	btnGenerateJSON := widget.NewButtonWithIcon("Generate Project JSON", theme.DocumentCreateIcon(), func() {
 		var (
 			toModels []metadata.Model
 			prj      *metadata.Project
@@ -262,20 +261,20 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
-		toUniTypes := uni.Types[driverEntry.Selected]
-		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, rt, toUniTypes)
+		langType := types[driverEntry.Selected]
+		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, rt, langType)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
-		if optimizeEntry.Checked {
+		if modeEntry.Checked {
 			err = enc.Encode(&toModels)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
 				return
 			}
 		} else {
-			prj, err = generator.ExportProject(prjTmplName, projectName.Text, projTmpl, toModels, build.InitEnv)
+			prj, err = generator.ExportProject(projectTemplateName, projectName.Text, projectTemplate, toModels, build.InitEnv)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
 				return
@@ -295,7 +294,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
-		err = io.Save(filepath.Join(".", r.DBCache), cache)
+		err = io.Save(filepath.Join(".", c.DBCache), cache)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -304,7 +303,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		display.Notify("Success", "Generate Project JSON")
 	})
 
-	saveProjectJson := widget.NewButtonWithIcon("Save JSON", theme.DocumentSaveIcon(), func() {
+	btnSaveProjectJSON := widget.NewButtonWithIcon("Save JSON", theme.DocumentSaveIcon(), func() {
 		outFile, err := dialog.File().Filter("json", ".json").Title("Save As").Save()
 		if err == dialog.ErrCancelled {
 			display.PopUpWindows(dialog.ErrCancelled.Error(), canvas)
@@ -325,9 +324,9 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		display.Notify("Success", "Save JSON")
 	})
 
-	generateButton := widget.NewButtonWithIcon("Generate Output", theme.DocumentCreateIcon(), func() {
+	btnGenerate := widget.NewButtonWithIcon("Generate Output", theme.DocumentCreateIcon(), func() {
 		newDataStruct := binding.BindStruct(&metadata.File{})
-		files, err = generator.GenerateFiles(projectName.Text, projectJsonInput.Text, funcMap, langTmpl)
+		files, err = generator.GenerateFiles(projectName.Text, projectJsonInput.Text, funcMap, templates)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -346,7 +345,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		display.Notify("Success", "Generate Output")
 	})
 
-	generateProject := widget.NewButtonWithIcon("Save Project", theme.DocumentSaveIcon(), func() {
+	btnSave := widget.NewButtonWithIcon("Save Project", theme.DocumentSaveIcon(), func() {
 		if len(files) < 1 {
 			display.PopUpWindows("output files list is empty", canvas)
 			return
@@ -367,7 +366,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 		display.Notify("Success", "Save Project")
 	})
 
-	testDsn := widget.NewButtonWithIcon("Test Connection", theme.CheckButtonCheckedIcon(), func() {
+	btnTestDsn := widget.NewButtonWithIcon("Test Connection", theme.CheckButtonCheckedIcon(), func() {
 		oldDsn := project.SelectDSN(dbCache, driverEntry.Selected)
 		if strings.Compare(oldDsn, dsnSourceEntry.Text) != 0 {
 			project.UpdateDBCache(&dbCache, driverEntry.Selected, dsnSourceEntry.Text)
@@ -396,12 +395,12 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, r metadata.Config, db
 
 	bottomButtons := container.NewVBox(
 		container.NewAdaptiveGrid(2,
-			testDsn,
-			connectGenerate,
-			generateButton,
-			loadPrJson,
-			saveProjectJson,
-			generateProject, reloadAllTemplate, openButton),
+			btnTestDsn,
+			btnGenerateJSON,
+			btnGenerate,
+			btnLoadAndGenerate,
+			btnSaveProjectJSON,
+			btnSave, btnReloadTemplates, btnOpenOutputDirectory),
 	)
 
 	tabs := container.NewVBox(
