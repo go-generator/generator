@@ -9,6 +9,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.11.0
 	github.com/go-generator/core v0.0.7
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/godror/godror v0.29.0
 	github.com/lib/pq v1.10.3
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/sqweek/dialog v0.0.0-20211002065838-9a201b55ab91
@@ -23,7 +24,9 @@ require (
 	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
 	github.com/go-gl/gl v0.0.0-20210813123233-e4099ee2221f // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210410170116-ea3d685f79fb // indirect
+	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/godbus/dbus/v5 v5.0.4 // indirect
+	github.com/godror/knownpb v0.1.0 // indirect
 	github.com/goki/freetype v0.0.0-20181231101311-fa8a33aabaff // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -49,6 +52,7 @@ require (
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

@@ -10,6 +10,7 @@ import (
 	"github.com/go-generator/core"
 	"github.com/go-generator/core/display"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/godror/godror"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"go-generator/internal/ui"
@@ -55,8 +56,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	size := fyne.NewSize(float32(sWidth), float32(sHeight))
-	w.Resize(display.ResizeWindows(30, 60, size))
+	w.Resize(display.ResizeWindows(70, 60, size))
 	settingsItem := fyne.NewMenuItem("Settings", func() {
 		wi := a.NewWindow("App Settings")
 		r1, err1 := setIcon("./icons/app.jpg")
