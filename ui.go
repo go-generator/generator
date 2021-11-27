@@ -31,11 +31,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	/*
+	var allTypes map[string]map[string]string
+	content, err := ioutil.ReadFile("./configs/types.json")
+	if err != nil {
+		allTypes = types.Types
+	} else {
+		err = json.Unmarshal(content, &allTypes)
+		if err != nil {
+			allTypes = types.Types
+		} else {
+			fmt.Println("marshal success")
+		}
+	}*/
 	a := app.NewWithID("Generator")
-	r, err1 := display.SetIcon("./icons/icon.png")
-	if err1 != nil {
-		log.Fatal(err1)
+	r, err := display.SetIcon("./icons/icon.png")
+	if err != nil {
+		log.Fatal(err)
 	}
 	a.SetIcon(r)
 	w := a.NewWindow("Metadata and Code Generator")
