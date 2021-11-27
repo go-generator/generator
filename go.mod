@@ -6,7 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.1.1
 	github.com/core-go/config v0.1.0
 	github.com/denisenkom/go-mssqldb v0.11.0
-	github.com/go-generator/core v0.0.44
+	github.com/go-generator/core v0.0.48
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/godror/godror v0.29.0
 	github.com/lib/pq v1.10.3

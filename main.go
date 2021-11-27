@@ -97,7 +97,6 @@ func main() {
 			}
 		}
 	}
-
 	a := app.NewWithID("Generator")
 	r, err := display.SetIcon(os.Getenv(project.WindowsIconEnv))
 	if err != nil {
