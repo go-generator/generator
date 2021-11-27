@@ -3,4 +3,4 @@ project_name: go-service
 project_path: project
 template: template
 dbcache: configs/datasource.yaml
-db: sqlite3
+db: mysql

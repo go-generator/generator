@@ -1,71 +1,66 @@
 {
-  "language": "go",
-  "env": {
-    "go_module": "go-service",
-    "usecase": "/usecase",
-    "model": "model",
-    "filter": "filter",
-    "service": "service",
-    "handler": "handler",
-    "Filter": "Filter",
-    "Repository": "Repository",
-    "Service": "Service",
-    "Handler": "Handler",
-    "leaf": "true"
-  },
-  "statics": [
-    {
-      "name": "sql_go_mod",
-      "file": "go.mod"
-    },
-    {
-       "name": "sql_go_sum",
-       "file": "go.sum"
-    },
-    {
-      "name": "sql_config",
-      "file": "configs/config.yaml"
-    },
-    {
-      "name": "main",
-      "file": "main.go"
-    },
-    {
-      "name": "sql_root",
-      "file": "internal/app/root.go"
-    }
-  ],
-  "arrays": [
-    {
-      "name": "sql_app",
-      "file": "internal/app/app.go"
-    },
-    {
-      "name": "route",
-      "file": "internal/app/route.go"
-    }
-  ],
-  "entities": [
-    {
-      "name": "model",
-      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}.go",
-      "model": true,
-      "replace": true
-    },
-    {
-      "name": "filter",
-      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_filter.go"
-    },
-    {
-      "name": "service",
-      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_service.go"
-    },
-    {
-      "name": "handler",
-      "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_handler.go"
-    }
-  ],
-  "type": {
-    "string": "string"
-  }
-}
+   "language": "go",
+   "env": {
+     "Filter": "Filter",
+     "Handler": "Handler",
+     "Repository": "Repository",
+     "Service": "Service",
+     "data_source_name": "root:12345678x@X@(localhost:3306)/classicmodels?charset=utf8\u0026parseTime=True\u0026loc=Local",
+     "driver": "mysql",
+     "filter": "filter",
+     "go_module": "go-service",
+     "handler": "handler",
+     "leaf": "true",
+     "model": "model",
+     "service": "service",
+     "usecase": "/usecase"
+   },
+   "statics": [
+     {
+       "name": "sql_go_mod",
+       "file": "go.mod"
+     },
+     {
+       "name": "sql_config",
+       "file": "configs/config.yaml"
+     },
+     {
+       "name": "main",
+       "file": "main.go"
+     },
+     {
+       "name": "sql_root",
+       "file": "internal/app/root.go"
+     }
+   ],
+   "arrays": [
+     {
+       "name": "sql_app",
+       "file": "internal/app/app.go"
+     },
+     {
+       "name": "route",
+       "file": "internal/app/route.go"
+     }
+   ],
+   "entities": [
+     {
+       "name": "model",
+       "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}.go",
+       "model": true,
+       "replace": true
+     },
+     {
+       "name": "filter",
+       "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_filter.go"
+     },
+     {
+       "name": "service",
+       "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_service.go"
+     },
+     {
+       "name": "handler",
+       "file": "internal{{.env.usecase}}/{{.raw}}/{{.raw}}_handler.go"
+     }
+   ]
+ }

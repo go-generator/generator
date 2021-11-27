@@ -4,9 +4,10 @@ import "time"{{end}}
 
 type {{.Name}} struct {|{{ range $element := .fields }}
     {{$element.Name}} {{$element.type}} `mapstructure:"{{$element.raw}}" json:"{{$element.name}},omitempty" gorm:"column:{{$element.column | lower}}{{if $element.key}};primary_key{{end}}" bson:"{{$element.bson}}" dynamodbav:"{{$element.name}},omitempty" firestore:"{{$element.name}},omitempty" validate:"required{{if ne $element.length 0}},max={{$element.length}}{{end}}"`{{end}}{{range $element := .arrays}} {{if or ($element.leaf) (eq .env.leaf "false")}}
-    {{$element.Names}} []{{$element.Name}} `mapstructure:"{{$element.raws}}" json:"{{$element.names}},omitempty" gorm:"column:{{$element.names | lower}}" bson:"{{$element.names}}" dynamodbav:"{{$element.names}},omitempty" firestore:"{{$element.names}},omitempty"`{{end}}{{end}}
+    {{$element.Names}} []{{$element.Name}} `mapstructure:"{{$element.raws}}" json:"{{$element.names}},omitempty" bson:"{{$element.names}}" dynamodbav:"{{$element.names}},omitempty" firestore:"{{$element.names}},omitempty"`{{end}}{{end}}
 }{{if eq .env.layer false}}
 {{ range $child := .arrays }}{{ if or ($child.leaf) (eq .env.leaf "false")}} {{if ne $child.Name $.Name}}
 type {{$child.Name}} struct {|{{ range $element := $child.fields }}
-    {{$element.Name}} {{$element.type}} `mapstructure:"{{$element.raw}}" json:"{{$element.name}},omitempty" gorm:"column:{{$element.column | lower}}{{if $element.key}};primary_key{{end}}" bson:"{{$element.bson}}" dynamodbav:"{{$element.name}},omitempty" firestore:"{{$element.name}},omitempty" validate:"required{{if ne $element.length 0}},max={{$element.length}}{{end}}"`{{end}}
-}{{end}}{{end}}{{end}}{{end}}
+    {{$element.Name}} {{$element.type}} `mapstructure:"{{$element.raw}}" json:"{{$element.name}},omitempty" gorm:"column:{{$element.name}}" bson:"{{$element.bson}}" dynamodbav:"{{$element.name}},omitempty" firestore:"{{$element.name}},omitempty" validate:"required{{if ne $element.length 0}},max={{$element.length}}{{end}}"`{{end}}
+}
+{{end}}{{end}}{{end}}{{end}}

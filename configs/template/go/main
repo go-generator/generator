@@ -10,7 +10,8 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 
-	"{{.env.go_module}}/internal/app"
+	"{{.env.go_module}}/internal/app"{{if .env.driver}}
+    {{.env.driver | go_driver}}{{end}}
 )
 
 func main() {

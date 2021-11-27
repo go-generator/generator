@@ -36,7 +36,7 @@ type {{.name}}{{.env.Handler}} struct {
 }
 
 func (h *{{.name}}{{.env.Handler}}) Load(w http.ResponseWriter, r *http.Request) {
-	id := sv.{{.goGetId}}(w, r)
+	id := sv.{{.goGetId}}{{ if ne .goGetId "GetId"}}(w, r){{else}}(w, r, h.ModelType, h.Keys, h.Indexes){{end}}
 	if {{.goCheckId}} {
 		result, err := h.service.Load(r.Context(), {{.goIdPrefix}}id)
 		sv.RespondModel(w, r, result, err, h.Error, nil)
@@ -76,7 +76,7 @@ func (h *{{.name}}{{.env.Handler}}) Patch(w http.ResponseWriter, r *http.Request
 	}
 }
 func (h *{{.name}}{{.env.Handler}}) Delete(w http.ResponseWriter, r *http.Request) {
-	id := sv.{{.goGetId}}(w, r)
+	id := sv.{{.goGetId}}{{ if ne .goGetId "GetId"}}(w, r){{else}}(w, r, h.ModelType, h.Keys, h.Indexes){{end}}
     if {{.goCheckId}} {
 		result, err := h.service.Delete(r.Context(), {{.goIdPrefix}}id)
 		sv.HandleDelete(w, r, result, err, h.Error, h.Log, h.Resource, h.Action.Delete)

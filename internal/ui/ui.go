@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -24,7 +23,6 @@ import (
 	"github.com/go-generator/core/export"
 	gdb "github.com/go-generator/core/export/db"
 	"github.com/go-generator/core/export/relationship"
-	uni "github.com/go-generator/core/export/types"
 	"github.com/go-generator/core/generator"
 	"github.com/go-generator/core/io"
 	"github.com/go-generator/core/list"
@@ -44,33 +42,43 @@ const (
 )
 
 // AppScreen shows a panel containing widget
-func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
+func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTypes map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
 	var files []metadata.File
 	funcMap := template.MakeFuncMap()
 	templatePath, err := filepath.Abs(filepath.Join(".", "configs", c.Template))
 	if err != nil {
-		log.Fatal(err)
+		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+		return nil
 	}
 	templates, err := io.LoadAll(templatePath)
 	if err != nil {
-		log.Fatal(err)
+		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+		return nil
 	}
 	projectPath, err := filepath.Abs(filepath.Join(".", "configs", c.ProjectPath))
 	if err != nil {
-		log.Fatal(err)
+		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+		return nil
 	}
 	projectTemplate, err := io.Load(projectPath)
 	if err != nil {
-		log.Fatal(err)
+		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+		return nil
 	}
 	projects, err := io.List(projectPath)
 	if err != nil {
-		log.Fatal(err)
+		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+		return nil
 	}
 
 	if len(projects) < 1 {
-		log.Fatal("no project type found")
+		display.PopUpWindows("no database types found", canvas)
+		return nil
 	}
+
+	infinite := widget.NewProgressBarInfinite()
+	infinite.Hide()
+
 	projectTemplateName := c.Project
 	prjTmplNameEntry := widget.NewSelect(projects, func(o string) {
 		c.Project = o
@@ -83,6 +91,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 	})
 
 	prjTmplNameEntry.PlaceHolder = c.Project
+	prjTmplNameEntry.SetSelected(c.Project)
 
 	projectName := widget.NewEntry()
 	projectName.SetText(c.ProjectName)
@@ -136,19 +145,34 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 				display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
 				return
 			}
+			var (
+				prj    metadata.Project
+				buffer bytes.Buffer
+			)
+			prjString := projectTemplate[prjTmplNameEntry.Selected]
+			err = json.NewDecoder(bytes.NewBuffer([]byte(prjString))).Decode(&prj)
+			if err != nil {
+				display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+				return
+			}
+			dsnSpecial := bytes.Replace([]byte(dsn), []byte(`\u0026`), []byte("&"), -1)
+			prj.Env["driver"] = driverEntry.Selected
+			prj.Env["data_source_name"] = string(dsnSpecial)
+			encoder := json.NewEncoder(&buffer)
+			encoder.SetIndent(" ", "  ")
+			err = encoder.Encode(&prj)
+			if err != nil {
+				display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+				return
+			}
+			path := filepath.Join(projectPath, prjTmplNameEntry.Selected)
+			err = ioutil.WriteFile(path, buffer.Bytes(), os.ModePerm)
+			if err != nil {
+				display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+				return
+			}
 		}
-		switch driverEntry.Selected {
-		case DriverMysql:
-			dbCache.MySql = dsn
-		case DriverPostgres:
-			dbCache.Postgres = dsn
-		case DriverMssql:
-			dbCache.Mssql = dsn
-		case DriverSqlite3:
-			dbCache.Sqlite3 = dsn
-		case DriverOracle:
-			dbCache.Oracle = dsn
-		}
+		project.UpdateDBCache(&dbCache, driverEntry.Selected, dsn)
 	}
 	dsnSourceEntry.SetText(project.SelectDSN(dbCache, driverEntry.Selected))
 	driverEntry.OnChanged = func(driver string) {
@@ -202,21 +226,30 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 		}
 	}
 
-	btnReloadTemplates := widget.NewButtonWithIcon("Reload Template", theme.ContentRedoIcon(), func() {
+	btnReloadTemplates := widget.NewButtonWithIcon("Reload All", theme.ContentRedoIcon(), func() {
 		projectTemplate, err = io.Load(projectPath)
 		if err != nil {
-			log.Fatal(err)
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
 		}
 		projects, err = io.List(projectPath)
 		if err != nil {
-			log.Fatal(err)
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
 		}
 		templates, err = io.LoadAll(templatePath)
 		if err != nil {
-			log.Fatal(err)
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
 		}
 		outputWindows.SetText("")
-		listWithData.UnselectAll()
+		err = data.Set(nil)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
+			return
+		}
+		dataStruct = binding.BindStruct(&metadata.File{})
+		projectJsonInput.SetText("")
 	})
 
 	btnLoadAndGenerate := widget.NewButtonWithIcon("Generate From File", theme.DocumentCreateIcon(), func() {
@@ -254,13 +287,19 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 		}
 	})
 
-	var modeEntry *widget.Check
+	var modeEntry, showPathEntry *widget.Check
 	modeEntry = widget.NewCheck("Models Only", func(b bool) {
 		modeEntry.SetChecked(b)
 	})
 	modeEntry.SetChecked(false)
 
+	showPathEntry = widget.NewCheck("Show Path", func(b bool) {
+		showPathEntry.SetChecked(b)
+	})
+	showPathEntry.SetChecked(false)
+
 	btnGenerateJSON := widget.NewButtonWithIcon("Generate Project JSON", theme.DocumentCreateIcon(), func() {
+		infinite.Show()
 		var (
 			models []metadata.Model
 			prj    *metadata.Project
@@ -269,11 +308,13 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 		sqlDB, err := project.ConnectDB(dbCache, driverEntry.Selected)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 		}
 		defer func() {
 			err = sqlDB.Close()
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
+				infinite.Hide()
 			}
 		}()
 		enc := json.NewEncoder(&pData)
@@ -281,31 +322,35 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 		dbName, err := project.GetDatabaseName(dbCache, driverEntry.Selected)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 
 		tables, err := gdb.ListTables(ctx, sqlDB, dbName)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 
 		primaryKeys, err := export.GetAllPrimaryKeys(ctx, sqlDB, dbName, driverEntry.Selected, tables)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 
 		relations, err := relationship.GetRelationshipTable(ctx, sqlDB, dbName, tables, primaryKeys)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 
-		toUniTypes := uni.Types[driverEntry.Selected]
-		models, err = export.ToModels(ctx, sqlDB, dbName, tables, relations, toUniTypes, primaryKeys)
+		models, err = export.ToModels(ctx, sqlDB, dbName, tables, relations, allUniversalTypes[driverEntry.Selected], primaryKeys)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 
@@ -313,6 +358,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 			err = enc.Encode(&models)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
+				infinite.Hide()
 				return
 			}
 		} else {
@@ -328,20 +374,24 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 			err = enc.Encode(&prj)
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
+				infinite.Hide()
 				return
 			}
 		}
 		cache, err := yaml.Marshal(dbCache)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 		err = io.Save(filepath.Join(".", c.DBCache), cache)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 		projectJsonInput.SetText(pData.String())
+		infinite.Hide()
 		display.Notify("Success", "Generate Project JSON")
 	})
 
@@ -377,7 +427,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
-		err = list.ShowFiles(data, newDataStruct, files)
+		err = list.ShowFiles(showPathEntry.Checked, data, newDataStruct, files)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -412,6 +462,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 	})
 
 	btnTestDsn := widget.NewButtonWithIcon("Test Connection", theme.CheckButtonCheckedIcon(), func() {
+		infinite.Show()
 		oldDsn := project.SelectDSN(dbCache, driverEntry.Selected)
 		if strings.Compare(oldDsn, dsnSourceEntry.Text) != 0 {
 			project.UpdateDBCache(&dbCache, driverEntry.Selected, dsnSourceEntry.Text)
@@ -419,19 +470,35 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 		db, err := project.ConnectDB(dbCache, driverEntry.Selected)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
 		defer func() {
 			err = db.Close()
 			if err != nil {
 				display.PopUpWindows(err.Error(), canvas)
+				infinite.Hide()
 			}
 		}()
 		err = db.Ping()
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
 			return
 		}
+		cache, err := yaml.Marshal(dbCache)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
+			return
+		}
+		err = io.Save(filepath.Join(".", c.DBCache), cache)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			infinite.Hide()
+			return
+		}
+		infinite.Hide()
 		display.Notify("Success", "Test Connection")
 	})
 
@@ -448,7 +515,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 			btnSave, btnReloadTemplates, btnOpenOutputDirectory),
 	)
 
-	tabs := container.NewVBox(modeEntry,
+	tabs := container.NewVBox(container.NewAdaptiveGrid(2, modeEntry, showPathEntry),
 		container.NewAdaptiveGrid(2, widget.NewLabel("Project:"),
 			widget.NewLabel("Package:"),
 			prjTmplNameEntry,
@@ -460,5 +527,5 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes map[string]map[
 		prScroll,
 		outScroll,
 	)
-	return container.NewBorder(nil, nil, cb1, nil, cb2)
+	return container.NewBorder(nil, infinite, cb1, nil, cb2)
 }
