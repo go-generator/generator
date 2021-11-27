@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
@@ -10,19 +12,43 @@ import (
 	"github.com/go-generator/core"
 	"github.com/go-generator/core/display"
 	"github.com/go-generator/core/export/types"
+	"github.com/go-generator/core/project"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/godror/godror"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"go-generator/internal/ui"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 )
 
-func main() {
-	ctx := context.TODO()
+func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	var root metadata.Config
-	var dbCache metadata.Database
+	err := project.SetPathEnv(project.TypesJsonEnv, "./configs/types.json")
+	if err != nil {
+		panic(err)
+	}
+	err = project.SetPathEnv(project.WindowsIconEnv, "./configs/icons/icon.png")
+	if err != nil {
+		panic(err)
+	}
+	err = project.SetPathEnv(project.AppIconEnv, "./configs/icons/app.jpg")
+	if err != nil {
+		panic(err)
+	}
+	err = project.SetPathEnv(project.ConfigEnv, "./configs/config.yaml")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func main() {
+	var (
+		root    metadata.Config
+		dbCache metadata.Database
+	)
 	err := config.Load(&root, "configs/config")
 	if err != nil {
 		panic(err)
@@ -31,26 +57,32 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	/*
-	var allTypes map[string]map[string]string
-	content, err := ioutil.ReadFile("./configs/types.json")
+	ctx := context.TODO()
+	allTypes := make(map[string]map[string]string)
+
+	tpJson, err := filepath.Abs(os.Getenv(project.TypesJsonEnv))
 	if err != nil {
 		allTypes = types.Types
 	} else {
-		err = json.Unmarshal(content, &allTypes)
+		content, err := ioutil.ReadFile(tpJson)
 		if err != nil {
 			allTypes = types.Types
 		} else {
-			fmt.Println("marshal success")
+			err = json.NewDecoder(bytes.NewBuffer(content)).Decode(&allTypes)
+			if err != nil {
+				allTypes = types.Types
+			}
 		}
-	}*/
+	}
 	a := app.NewWithID("Generator")
-	r, err := display.SetIcon("./icons/icon.png")
+	r, err := display.SetIcon(os.Getenv(project.WindowsIconEnv))
 	if err != nil {
 		log.Fatal(err)
 	}
 	a.SetIcon(r)
 	w := a.NewWindow("Metadata and Code Generator")
+	w.SetMaster()
+	w.CenterOnScreen()
 	canvas := w.Canvas()
 	sWidth, sHeight, err := display.GetActiveDisplaySize(0)
 	if err != nil {
@@ -60,23 +92,22 @@ func main() {
 	size := fyne.NewSize(float32(sWidth), float32(sHeight))
 	w.Resize(display.ResizeWindows(70, 60, size))
 	settingsItem := fyne.NewMenuItem("Settings", func() {
-		wi := a.NewWindow("App Settings")
-		r1, err1 := display.SetIcon("./icons/app.jpg")
+		settingWindows := a.NewWindow("App Settings")
+		r1, err1 := display.SetIcon(os.Getenv(project.AppIconEnv))
 		if err1 != nil {
 			display.PopUpWindows(err1.Error(), canvas)
 			return
 		}
-		wi.SetIcon(r1)
-		wi.SetContent(settings.NewSettings().LoadAppearanceScreen(wi))
-		wi.Resize(display.ResizeWindows(25, 25, size))
-		wi.Show()
+		settingWindows.SetIcon(r1)
+		settingWindows.SetContent(settings.NewSettings().LoadAppearanceScreen(settingWindows))
+		settingWindows.Resize(display.ResizeWindows(25, 25, size))
+		settingWindows.Show()
 	})
 	w.SetIcon(r)
-	w.SetMainMenu(fyne.NewMainMenu(fyne.NewMenu("Setting", settingsItem)))
+	w.SetMainMenu(fyne.NewMainMenu(
+		fyne.NewMenu("Setting", settingsItem)))
 
-	wContent := ui.WidgetScreen(ctx, canvas, types.Types, root, dbCache)
+	wContent := ui.AppScreen(ctx, canvas, allTypes, root, dbCache)
 	w.SetContent(wContent)
-	w.SetMaster()
-	w.CenterOnScreen()
 	w.ShowAndRun()
 }

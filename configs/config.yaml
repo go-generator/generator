@@ -1,6 +1,5 @@
-project_name: go-sql-rest-api
-template: template
-project_path: project
 project: go_sql
-cache: configs/cache.yaml
-dbCache: configs/datasource.yaml
+project_name: go-sql-rest-api
+project_path: project
+template: template
+dbcache: configs/datasource.yaml

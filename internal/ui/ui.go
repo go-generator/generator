@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -16,6 +17,7 @@ import (
 	"github.com/go-generator/core/export"
 	edb "github.com/go-generator/core/export/db"
 	"github.com/go-generator/core/export/relationship"
+	uni "github.com/go-generator/core/export/types"
 	"github.com/go-generator/core/generator"
 	"github.com/go-generator/core/io"
 	"github.com/go-generator/core/list"
@@ -33,13 +35,11 @@ import (
 	"strings"
 )
 
-// WidgetScreen shows a panel containing widget
-func WidgetScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
+// AppScreen shows a panel containing widget
+func AppScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[string]string, c metadata.Config, dbCache metadata.Database) fyne.CanvasObject {
 	var files []metadata.File
-
 	funcMap := template.MakeFuncMap()
-
-	templatePath, err := filepath.Abs(filepath.Join(".", c.Template))
+	templatePath, err := filepath.Abs(filepath.Join(".", "configs", c.Template))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[
 	if err != nil {
 		log.Fatal(err)
 	}
-	projectPath, err := filepath.Abs(filepath.Join(".", c.ProjectPath))
+	projectPath, err := filepath.Abs(filepath.Join(".", "configs", c.ProjectPath))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,10 +63,24 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[
 	if len(projects) < 1 {
 		log.Fatal("no project type found")
 	}
-	projectTemplateName := projects[0]
+	projectTemplateName := c.Project
 	prjTmplNameEntry := widget.NewSelect(projects, func(o string) {
+		c.Project = o
+		var b bytes.Buffer
+		err = yaml.NewEncoder(&b).Encode(&c)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+			return
+		}
+		err = ioutil.WriteFile(os.Getenv(project.ConfigEnv), b.Bytes(), os.ModePerm)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+			return
+		}
 		projectTemplateName = o
 	})
+
+	prjTmplNameEntry.PlaceHolder = c.Project
 
 	projectName := widget.NewEntry()
 	projectName.SetText(c.ProjectName)
@@ -251,18 +265,26 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[
 			return
 		}
 
-		rt, _, err := relationship.FindRelationships(ctx, sqlDB, dbName)
-		if err != nil {
-			display.PopUpWindows(err.Error(), canvas)
-			return
-		}
 		tables, err := edb.ListTables(ctx, sqlDB, dbName)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
 		}
-		langType := types[driverEntry.Selected]
-		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, rt, langType)
+
+		primaryKeys, err := export.GetAllPrimaryKeys(ctx, sqlDB, dbName, driverEntry.Selected, tables)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+
+		relations, err := relationship.GetRelationshipTable(ctx, sqlDB, dbName, tables, primaryKeys)
+		if err != nil {
+			display.PopUpWindows(err.Error(), canvas)
+			return
+		}
+
+		toUniTypes := uni.Types[driverEntry.Selected]
+		toModels, err = export.ToModels(ctx, sqlDB, dbName, tables, relations, toUniTypes, primaryKeys)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
 			return
@@ -403,7 +425,7 @@ func WidgetScreen(ctx context.Context, canvas fyne.Canvas, types map[string]map[
 			btnSave, btnReloadTemplates, btnOpenOutputDirectory),
 	)
 
-	tabs := container.NewVBox(
+	tabs := container.NewVBox(modeEntry,
 		container.NewAdaptiveGrid(2, widget.NewLabel("Project:"),
 			widget.NewLabel("Package:"),
 			prjTmplNameEntry,
