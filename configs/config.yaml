@@ -1,6 +1,8 @@
-project: go_sql_layer
+prefix: pg
+suffix: en
+project: go_sql
 project_name: go-service
 project_path: project
 template: template
 dbcache: configs/datasource.yaml
-db: mysql
+db: sqlite3

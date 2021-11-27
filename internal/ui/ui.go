@@ -550,20 +550,61 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 	load := fyne.NewMenuItem("Load And Generate", func() {
 		btnLoadAndGenerate.OnTapped()
 	})
-	settingsItem := fyne.NewMenuItem("Settings", func() {
-		settingWindows := fyne.CurrentApp().NewWindow("App Settings")
+
+	prefixEntry := widget.NewEntry()
+	prefixEntry.SetText(c.Prefix)
+	prefixEntry.OnChanged = func(s string) {
+		c.Prefix = s
+		err = io.SaveConfig(os.Getenv(project.ConfigEnv), c)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+			return
+		}
+	}
+
+	suffixEntry := widget.NewEntry()
+	suffixEntry.SetText(c.Suffix)
+	suffixEntry.OnChanged = func(s string) {
+		c.Suffix = s
+		err = io.SaveConfig(os.Getenv(project.ConfigEnv), c)
+		if err != nil {
+			display.PopUpWindows(fmt.Sprintf("error: %v", err.Error()), canvas)
+			return
+		}
+	}
+
+	prefixSuffixItem := fyne.NewMenuItem("Prefix Suffix", func() {
+		windows := fyne.CurrentApp().NewWindow("Prefix Suffix")
 		r1, err1 := display.SetIcon(os.Getenv(project.AppIconEnv))
 		if err1 != nil {
 			display.PopUpWindows(err1.Error(), canvas)
 			return
 		}
-		settingWindows.SetIcon(r1)
-		settingWindows.SetContent(settings.NewSettings().LoadAppearanceScreen(settingWindows))
-		settingWindows.Show()
+		windows.SetIcon(r1)
+		windows.SetContent(container.NewAdaptiveGrid(2, widget.NewLabel("Prefix:"),
+			widget.NewLabel("Suffix:"),
+			prefixEntry,
+			suffixEntry))
+		windows.CenterOnScreen()
+		windows.Show()
+	})
+
+	settingsItem := fyne.NewMenuItem("Settings", func() {
+		windows := fyne.CurrentApp().NewWindow("App Settings")
+		r1, err1 := display.SetIcon(os.Getenv(project.AppIconEnv))
+		if err1 != nil {
+			display.PopUpWindows(err1.Error(), canvas)
+			return
+		}
+		windows.SetIcon(r1)
+		windows.SetContent(settings.NewSettings().LoadAppearanceScreen(windows))
+		windows.Show()
 	})
 
 	mainMenu := fyne.NewMainMenu(
-		fyne.NewMenu("File", load, saveJson, settingsItem))
+		fyne.NewMenu("File", load, saveJson, settingsItem),
+		fyne.NewMenu("Edit", prefixSuffixItem),
+	)
 
 	return mainMenu, container.NewBorder(nil, infinite, cb1, nil, cb2)
 }
