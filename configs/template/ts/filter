@@ -1,4 +1,0 @@
-export interface {{.Name}}Filter {|{{ range $element := .fields }}
-	{{$element.name}}?: {{$element.tsFilterType}};
-{{end}}
-}

@@ -1,4 +1,4 @@
-import { {{if eq .time true}}DateRange, {{end}}Filter, Model, {{if eq .number true}}NumberRange, {{end}}Repository, ResultInfo, Service } from 'onecore';
+import { {{.ts_date}}Filter, Model, {{.ts_number}}Repository, ResultInfo, Service } from 'onecore';
 
 export interface {{.Name}}{{.env.Filter}} extends Filter {|{{ range $element := .fields }}
   {{$element.name}}?: {{$element.tsFilterType}};{{end}}

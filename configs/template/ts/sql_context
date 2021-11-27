@@ -21,7 +21,8 @@ export function {{.env.use}}Context(db: DB, conf: LogConfig): ApplicationContext
   const {{$element.name}} = {{.env.use}}{{$element.Name}}{{.env.Controller}}(logger.error, db);{{end}}
 
   return { health, log{{ range $element := .collections }}, {{$element.name}}{{end}} };
-}{{end}}{{if .env.layer}}
+}
+{{end}}{{if .env.layer}}
 import { createChecker, DB, SearchBuilder } from 'query-core';
 import { createValidator } from 'xvalidators';
 {{ range $element := .collections }}
@@ -44,7 +45,7 @@ export function {{.env.use}}Context(db: DB, conf: LogConfig): ApplicationContext
   const sqlChecker = createChecker(db);
   const health = new HealthController([sqlChecker]);
 {{ range $element := .collections }}
-  const {{$element.name}}{{.env.SearchBuilder}} = new {{.env.SearchBuilder}}<{{$element.Name}}, {{$element.Name}}Filter>(db.query, '{{$element.name}}s', {{$element.name}}Model.attributes, db.driver);
+  const {{$element.name}}{{.env.SearchBuilder}} = new SearchBuilder<{{$element.Name}}, {{$element.Name}}Filter>(db.query, '{{$element.name}}s', {{$element.name}}Model.attributes, db.driver);
   const {{$element.name}}{{.env.Repository}} = new Sql{{$element.Name}}{{.env.Repository}}(db);
   const {{$element.name}}{{.env.Service}} = use{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.SearchBuilder}}.search, {{$element.name}}{{.env.Repository}});
   const {{$element.name}} = new {{$element.Name}}{{.env.Controller}}(logger.error, {{$element.name}}{{.env.Service}});{{end}}

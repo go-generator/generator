@@ -9,12 +9,12 @@
       "Service": "Service",
       "builder": "builder",
       "controller": "controller",
+      "driver": "mysql",
       "leaf": "true",
-      "project": "go-service",
       "repository": "repository",
       "service": "service",
       "use": "use",
-      "usecase": "usecase"
+      "usecase_path": ""
    },
    "statics": [
       {
@@ -67,12 +67,12 @@
    "entities": [
       {
          "name": "metadata",
-         "file": "src/{{.raw}}/{{.raw}}.ts",
+         "file": "src/{{.env.usecase_path}}{{.path}}/{{.path}}.ts",
          "replace": true
       },
       {
          "name": "sql",
-         "file": "src/{{.raw}}/index.ts",
+         "file": "src/{{.env.usecase_path}}{{.path}}/index.ts",
          "replace": true
       }
    ],

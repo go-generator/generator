@@ -6,17 +6,19 @@
       "Manager": "Manager",
       "Model": "Model",
       "Repository": "Repository",
+      "SearchBuilder": "SearchBuilder",
       "Service": "Service",
-      "Usecase": "Usecase",
-      "builder": "builder",
       "controller": "controller",
+      "controller_path": "controller",
       "driver": "mysql",
+      "layer": "true",
       "leaf": "true",
-      "project": "go-service",
+      "metadata": "metadata",
       "repository": "repository",
+      "repository_path": "repository",
       "service": "service",
-      "use": "use",
-      "usecase": "usecase"
+      "service_path": "service",
+      "use": "use"
    },
    "statics": [
       {
@@ -69,20 +71,20 @@
    "entities": [
       {
          "name": "metadata",
-         "file": "src/{{.path}}/{{.path}}.ts",
+         "file": "src/{{.env.metadata}}/{{.path}}.ts",
          "replace": true
       },
       {
          "name": "sql_repository",
-         "file": "src/{{.path}}/sql-{{.path}}-{{.env.repository}}.ts"
+         "file": "src/{{.env.repository_path}}/{{.path}}.ts"
       },
       {
          "name": "controller",
-         "file": "src/{{.path}}/{{.path}}-{{.env.controller}}.ts"
+         "file": "src/{{.env.controller_path}}/{{.path}}.ts"
       },
       {
-         "name": "sql_service",
-         "file": "src/{{.path}}/index.ts"
+         "name": "service",
+         "file": "src/{{.env.service_path}}/{{.path}}.ts"
       }
    ],
    "models": [
