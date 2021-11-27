@@ -1,4 +1,4 @@
-package {{if .env.layer}}filter{{else}}{{.name | snake}}{{end}}
+package {{if .env.layer}}{{.env.filter}}{{else}}{{.raw}}{{end}}
 
 import . "github.com/core-go/search"
 

@@ -107,7 +107,6 @@ func main() {
 	w.SetIcon(r)
 	w.SetMainMenu(fyne.NewMainMenu(
 		fyne.NewMenu("Setting", settingsItem)))
-
 	wContent := ui.AppScreen(ctx, canvas, allTypes, root, dbCache)
 	w.SetContent(wContent)
 	w.ShowAndRun()

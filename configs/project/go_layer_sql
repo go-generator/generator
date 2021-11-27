@@ -11,7 +11,8 @@
     "Filter": "Filter",
     "Repository": "Repository",
     "Service": "Service",
-    "Handler": "Handler"
+    "Handler": "Handler",
+    "leaf": "false"
   },
   "statics": [
     {

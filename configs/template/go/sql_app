@@ -11,14 +11,16 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
 	{{if .env.layer}}
-	. "{{.env.go_module}}/internal/{{.env.handler}}"
-	. "{{.env.go_module}}/internal/{{.env.model}}"{{end}}{{ range $element := .collections }}
-	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.raw}}"{{end}}
+	"{{.env.go_module}}/internal/{{.env.handler}}"
+	"{{.env.go_module}}/internal/{{.env.model}}"{{end}}{{ range $element := .collections }}{{if ne $element.leaf true}}
+	"{{.env.go_module}}/internal{{.env.usecase}}/{{$element.raw}}"{{end}}{{if ne .env.layer true}}{{ range $element := .collections }}
+	"{{.env.go_module}}/internal{{.env.usecase}}/{{$element.raw}}"{{end}}{{end}}{{end}}
 )
 
 type ApplicationContext struct {
-	HealthHandler *health.Handler{{ range $element := .collections }}
-	{{$element.Name}}{{.env.Handler}} {{$element.Name}}{{.env.Handler}}{{end}}
+	HealthHandler *health.Handler{{if .env.layer}}{{ range $element := .collections }}
+	{{$element.Name}}{{.env.Handler}} {{.env.handler}}.{{$element.Name}}{{.env.Handler}}{{end}}{{end}}{{if ne .env.layer true}}{{ range $element := .collections }}
+    {{$element.Name}}{{.env.Handler}} {{$element.raw}}.{{$element.Name}}{{.env.Handler}}{{end}}{{end}}
 }
 
 func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
@@ -29,9 +31,9 @@ func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
 	logError := log.ErrorMsg
 	status := sv.InitializeStatus(root.Status)
 	action := sv.InitializeAction(root.Action)
-	validator := v.NewValidator()
+	validator := v.NewValidator(){{if .env.layer}}
 {{ range $element := .collections }}
-    {{$element.name}}Type := reflect.TypeOf({{$element.Name}}{})
+    {{$element.name}}Type := reflect.TypeOf({{.env.model}}.{{$element.Name}}{})
     {{$element.name}}QueryBuilder := query.NewBuilder(db, "{{$element.table}}", {{$element.name}}Type)
     {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}QueryBuilder.BuildQuery)
     if err != nil {
@@ -39,11 +41,25 @@ func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
     }
     {{$element.name}}{{.env.Repository}}, err := q.NewRepository(db, "{{$element.table}}", {{$element.name}}Type)
     if err != nil {
-       	return nil, err
+        return nil, err
     }
-    {{$element.name}}{{.env.Service}} := New{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.Repository}})
-    {{$element.name}}{{.env.Handler}} := New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
-{{end}}
+    {{$element.name}}{{.env.Service}} := {{.raw}}.New{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.Repository}})
+    {{$element.name}}{{.env.Handler}} := {{.env.handler}}.New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
+{{end}}{{end}}{{if ne .env.layer true}}
+{{ range $element := .collections }}
+    {{$element.name}}Type := reflect.TypeOf({{$element.raw}}.{{$element.Name}}{})
+    {{$element.name}}QueryBuilder := query.NewBuilder(db, "{{$element.table}}", {{$element.name}}Type)
+    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}QueryBuilder.BuildQuery)
+    if err != nil {
+        return nil, err
+    }
+    {{$element.name}}{{.env.Repository}}, err := q.NewRepository(db, "{{$element.table}}", {{$element.name}}Type)
+    if err != nil {
+        return nil, err
+    }
+    {{$element.name}}{{.env.Service}} := {{$element.raw}}.New{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.Repository}})
+    {{$element.name}}{{.env.Handler}} := {{$element.raw}}.New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
+{{end}}{{end}}
 	sqlChecker := q.NewHealthChecker(db)
 	healthHandler := health.NewHandler(sqlChecker)
 

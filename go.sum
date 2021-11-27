@@ -58,8 +58,8 @@ github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4
 github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 h1:Y5Q2mEwfzjMt5+3u70Gtw93ZOu2UuPeeeTBDntF7FoY=
 github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5/go.mod h1:uF6rMu/1nvu+5DpiRLwusA6xB8zlkNoGzKn8lmYONUo=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
-github.com/go-generator/core v0.0.25 h1:ZuYnYa/CTP67r3/+jNGxAxw3kt0HmHpybKEUPfHvL0s=
-github.com/go-generator/core v0.0.25/go.mod h1:QMH2vhfh78L47RQ+FyXkbgaQnKGG+LCyN7ytaFyr8k0=
+github.com/go-generator/core v0.0.27 h1:DxPH+bbwkPDY0yxBiZmr2AYTgf2DjgyuMuzYC4XReMU=
+github.com/go-generator/core v0.0.27/go.mod h1:QMH2vhfh78L47RQ+FyXkbgaQnKGG+LCyN7ytaFyr8k0=
 github.com/go-gl/gl v0.0.0-20210813123233-e4099ee2221f h1:s0O46d8fPwk9kU4k1jj76wBquMVETx7uveQD9MCIQoU=
 github.com/go-gl/gl v0.0.0-20210813123233-e4099ee2221f/go.mod h1:wjpnOv6ONl2SuJSxqCPVaPZibGFdSci9HFocT9qtVYM=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1 h1:QbL/5oDUmRBzO9/Z7Seo6zf912W/a6Sr4Eu0G/3Jho0=

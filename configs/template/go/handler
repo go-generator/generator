@@ -1,4 +1,4 @@
-package {{if .env.layer}}handler{{else}}{{.name | snake}}{{end}}
+package {{if .env.layer}}{{.env.handler}}{{else}}{{.raw}}{{end}}
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	. "{{.env.go_module}}/internal/{{.env.filter}}"
 	. "{{.env.go_module}}/internal/{{.env.model}}"
-	. "{{.env.go_module}}/internal{{.env.usecase}}/{{.name | snake}}"{{end}}
+	. "{{.env.go_module}}/internal{{.env.usecase}}/{{.raw}}"{{end}}
 )
 
 type {{.Name}}{{.env.Handler}} interface {
