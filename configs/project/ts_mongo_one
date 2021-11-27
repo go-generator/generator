@@ -8,7 +8,7 @@
      "Repository": "Repository",
      "Service": "Service",
      "builder": "builder",
-     "check": "true",
+     "check": "false",
      "controller": "controller",
      "data_source_name": "root:abcd1234@/masterdata?charset=utf8\u0026parseTime=True\u0026loc=Local",
      "driver": "mysql",
@@ -33,7 +33,7 @@
        "file": "tslint.json"
      },
      {
-       "name": "sql_package",
+       "name": "mongo_package",
        "file": "package.json"
      },
      {
@@ -45,17 +45,17 @@
        "file": ".env"
      },
      {
-       "name": "sql_config",
+       "name": "mongo_config",
        "file": "src/config.ts"
      },
      {
-       "name": "sql_app",
+       "name": "mongo_app",
        "file": "src/app.ts"
      }
    ],
    "arrays": [
      {
-       "name": "sql_context",
+       "name": "mongo_context",
        "file": "src/context.ts"
      },
      {
@@ -71,7 +71,7 @@
        "replace": true
      },
      {
-       "name": "sql",
+       "name": "mongo",
        "file": "src/{{.env.usecase_path}}{{.path}}/index.ts",
        "replace": true
      }

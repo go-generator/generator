@@ -7,6 +7,6 @@ export class {{.Name}}{{.env.Manager}} extends Manager<{{.Name}}, {{.tsId}}, {{.
     super(search, {{.env.repository}});
   }
 }
-export function {{.env.use}}{{.Name}}{{.env.Service}}(search: Search<{{.Name}}, {{.Name}}{{.env.Filter}}>, {{.env.repository}}: {{.Name}}{{.env.Repository}}): {{.Name}}{{.env.Service}} {
+export function {{.env.use}}{{.Name}}{{.env.useService}}(search: Search<{{.Name}}, {{.Name}}{{.env.Filter}}>, {{.env.repository}}: {{.Name}}{{.env.Repository}}): {{.Name}}{{.env.Service}} {
   return new {{.Name}}{{.env.Manager}}(search, {{.env.repository}});
 }

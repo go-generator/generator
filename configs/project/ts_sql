@@ -16,6 +16,7 @@
      "repository": "repository",
      "service": "service",
      "use": "use",
+     "useService": "Service",
      "usecase_path": ""
    },
    "statics": [
