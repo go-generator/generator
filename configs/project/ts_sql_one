@@ -15,6 +15,10 @@
   },
   "statics": [
     {
+      "name": "settings",
+      "file": ".vscode/settings.json"
+    },
+    {
       "name": "eslintrc",
       "file": ".eslintrc.js"
     },
