@@ -2,4 +2,5 @@ project: go_sql
 project_name: go-sql-rest-api
 project_path: project
 template: template
+db: mysql
 dbcache: configs/datasource.yaml

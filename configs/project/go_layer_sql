@@ -23,12 +23,12 @@
        "file": "go.sum"
     },
     {
-      "name": "main",
-      "file": "main.go"
-    },
-    {
       "name": "sql_config",
       "file": "configs/config.yaml"
+    },
+    {
+      "name": "main",
+      "file": "main.go"
     },
     {
       "name": "sql_root",
@@ -48,7 +48,8 @@
   "entities": [
     {
       "name": "model",
-      "file": "internal/{{.env.model}}/{{.raw | snake}}.go"
+      "file": "internal/{{.env.model}}/{{.raw | snake}}.go",
+      "replace": true
     },
     {
       "name": "filter",

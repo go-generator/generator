@@ -30,7 +30,6 @@ func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
 	status := sv.InitializeStatus(root.Status)
 	action := sv.InitializeAction(root.Action)
 	validator := v.NewValidator()
-
 {{ range $element := .collections }}
     {{$element.name}}Type := reflect.TypeOf({{$element.Name}}{})
     {{$element.name}}QueryBuilder := query.NewBuilder(db, "{{$element.table}}", {{$element.name}}Type)
@@ -45,7 +44,6 @@ func NewApp(context context.Context, root Root) (*ApplicationContext, error) {
     {{$element.name}}{{.env.Service}} := New{{$element.Name}}{{.env.Service}}({{$element.name}}{{.env.Repository}})
     {{$element.name}}{{.env.Handler}} := New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
 {{end}}
-
 	sqlChecker := q.NewHealthChecker(db)
 	healthHandler := health.NewHandler(sqlChecker)
 

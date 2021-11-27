@@ -17,11 +17,12 @@ import (
 	_ "github.com/godror/godror"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	"go-generator/internal/ui"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+
+	"go-generator/internal/ui"
 )
 
 func init() {
@@ -30,11 +31,11 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = project.SetPathEnv(project.WindowsIconEnv, "./configs/icons/icon.png")
+	err = project.SetPathEnv(project.WindowsIconEnv, "./configs/icon/icon.png")
 	if err != nil {
 		panic(err)
 	}
-	err = project.SetPathEnv(project.AppIconEnv, "./configs/icons/app.jpg")
+	err = project.SetPathEnv(project.AppIconEnv, "./configs/icon/app.jpg")
 	if err != nil {
 		panic(err)
 	}

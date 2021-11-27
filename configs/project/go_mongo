@@ -22,12 +22,12 @@
        "file": "go.sum"
     },
     {
-      "name": "main",
-      "file": "main.go"
-    },
-    {
       "name": "mongo_config",
       "file": "configs/config.yaml"
+    },
+    {
+      "name": "main",
+      "file": "main.go"
     },
     {
       "name": "mongo_root",
@@ -47,7 +47,8 @@
   "entities": [
     {
       "name": "model",
-      "file": "internal/{{.env.usecase}}/{{.raw}}/{{.raw}}.go"
+      "file": "internal/{{.env.usecase}}/{{.raw}}/{{.raw}}.go",
+      "replace": true
     },
     {
       "name": "filter",

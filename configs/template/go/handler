@@ -22,10 +22,10 @@ type {{.Name}}{{.env.Handler}} interface {
 }
 
 func New{{.Name}}{{.env.Handler}}(find func(context.Context, interface{}, interface{}, int64, ...int64) (int64, string, error), service {{.Name}}{{.env.Service}}, status sv.StatusConfig, logError func(context.Context, string), validate func(context.Context, interface{}) ([]sv.ErrorMessage, error), action *sv.ActionConfig) {{.Name}}{{.env.Handler}} {
-	searchModelType := reflect.TypeOf({{.Name}}{{.env.Filter}}{})
+	filterType := reflect.TypeOf({{.Name}}{{.env.Filter}}{})
 	modelType := reflect.TypeOf({{.Name}}{})
 	params := sv.CreateParams(modelType, &status, logError, validate, action)
-	searchHandler := search.NewSearchHandler(find, modelType, searchModelType, logError, params.Log)
+	searchHandler := search.NewSearchHandler(find, modelType, filterType, logError, params.Log)
 	return &{{.name}}{{.env.Handler}}{service: service, SearchHandler: searchHandler, Params: params}
 }
 
@@ -42,7 +42,6 @@ func (h *{{.name}}{{.env.Handler}}) Load(w http.ResponseWriter, r *http.Request)
 		sv.RespondModel(w, r, result, err, h.Error, nil)
 	}
 }
-
 func (h *{{.name}}{{.env.Handler}}) Create(w http.ResponseWriter, r *http.Request) {
 	var {{.name}} {{.Name}}
 	er1 := sv.Decode(w, r, &{{.name}})
@@ -54,7 +53,6 @@ func (h *{{.name}}{{.env.Handler}}) Create(w http.ResponseWriter, r *http.Reques
 		}
 	}
 }
-
 func (h *{{.name}}{{.env.Handler}}) Update(w http.ResponseWriter, r *http.Request) {
 	var {{.name}} {{.Name}}
 	er1 := sv.DecodeAndCheckId(w, r, &{{.name}}, h.Keys, h.Indexes)
@@ -66,7 +64,6 @@ func (h *{{.name}}{{.env.Handler}}) Update(w http.ResponseWriter, r *http.Reques
 		}
 	}
 }
-
 func (h *{{.name}}{{.env.Handler}}) Patch(w http.ResponseWriter, r *http.Request) {
 	var {{.name}} {{.Name}}
 	r, json, er1 := sv.BuildMapAndCheckId(w, r, &{{.name}}, h.Keys, h.Indexes)
