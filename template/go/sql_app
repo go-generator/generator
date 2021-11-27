@@ -13,8 +13,8 @@ import (
 	{{if .env.layer}}
 	. "{{.env.go_module}}/internal/{{.env.handler}}"
 	. "{{.env.go_module}}/internal/{{.env.model}}"{{end}}{{ range $element := .collections }}
-	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.raw}}"
-{{end}})
+	. "{{.env.go_module}}/internal{{.env.usecase}}/{{$element.raw}}"{{end}}
+)
 
 type ApplicationContext struct {
 	HealthHandler *health.Handler{{ range $element := .collections }}
