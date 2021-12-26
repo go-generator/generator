@@ -42,7 +42,14 @@ const (
 	DriverSqlite3  = "sqlite3"
 )
 
-func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTypes map[string]map[string]string, c metadata.Config, dbCache metadata.Database) (*fyne.MainMenu, fyne.CanvasObject) {
+func AppScreen(ctx context.Context,
+	canvas fyne.Canvas,
+	allTypes,
+	allUniversalTypes map[string]map[string]string,
+	c metadata.Config,
+	dbCache metadata.Database,
+	screenSize fyne.Size,
+) (*fyne.MainMenu, fyne.CanvasObject) {
 	var files []metadata.File
 	funcMap := template.MakeFuncMap()
 	templatePath, err := filepath.Abs(filepath.Join(".", "configs", c.Template))
@@ -585,6 +592,7 @@ func AppScreen(ctx context.Context, canvas fyne.Canvas, allTypes, allUniversalTy
 			widget.NewLabel("Suffix:"),
 			prefixEntry,
 			suffixEntry))
+		windows.Resize(display.ResizeWindows(20, 0, screenSize))
 		windows.CenterOnScreen()
 		windows.Show()
 	})

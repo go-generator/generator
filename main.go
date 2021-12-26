@@ -114,7 +114,7 @@ func main() {
 
 	size := fyne.NewSize(float32(sWidth), float32(sHeight))
 	w.Resize(display.ResizeWindows(70, 60, size))
-	mainMenu, wContent := ui.AppScreen(ctx, canvas, allTypes, allUniversalTypes, root, dbCache)
+	mainMenu, wContent := ui.AppScreen(ctx, canvas, allTypes, allUniversalTypes, root, dbCache, size)
 	if wContent == nil {
 		time.Sleep(time.Duration(5) * time.Second)
 		a.Quit()
