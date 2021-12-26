@@ -1,7 +1,7 @@
 import { Db } from 'mongodb';
 import { buildQuery, SearchBuilder } from 'mongodb-extension';
 import { Log, Manager, Search } from 'onecore';
-import { {{.Name}}, {{.Name}}{{.env.Filter}}, {{.name}}{{.env.Model}}, {{.Name}}{{.env.Repository}}, {{.Name}}{{.env.Service}} } from './{{.path}}';
+import { {{.Name}}, {{.Name}}{{.env.Filter}}{{if .keys}}{{.tsId}}, {{end}}, {{.name}}{{.env.Model}}, {{.Name}}{{.env.Repository}}, {{.Name}}{{.env.Service}} } from './{{.path}}';
 import { {{.Name}}{{.env.Controller}} } from './{{.path}}-{{.env.controller}}';
 export * from './{{.path}}';
 export { {{.Name}}{{.env.Controller}} };

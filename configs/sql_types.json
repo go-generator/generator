@@ -4,7 +4,7 @@
     "bit": "bool",
     "blob": "binary",
     "char": "string",
-    "date": "string",
+    "date": "date",
     "datetime": "datetime",
     "decimal": "decimal",
     "double": "float64",
