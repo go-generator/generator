@@ -7,7 +7,7 @@ import (
 	sv "github.com/core-go/service"
 )
 
-type Root struct {
+type Config struct {
 	Server     sv.ServerConf     `mapstructure:"server"`
 	Mongo      mongo.MongoConfig `mapstructure:"mongo"`
 	Log        log.Config        `mapstructure:"log"`
