@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/core-go/health"
 	"github.com/core-go/log"
+	"github.com/core-go/search/query"
 	sv "github.com/core-go/service"
 	v "github.com/core-go/service/v10"
 	q "github.com/core-go/sql"
-	"github.com/core-go/sql/query"
 	"reflect"
 	{{if eq .env.layer true}}
 	"{{.env.go_module}}/internal/{{.env.handler}}"
@@ -34,8 +34,8 @@ func NewApp(ctx context.Context, root Root) (*ApplicationContext, error) {
 	validator := v.NewValidator(){{if .env.layer}}
 {{ range $element := .collections }}
     {{$element.name}}Type := reflect.TypeOf({{.env.model}}.{{$element.Name}}{})
-    {{$element.name}}QueryBuilder := query.NewBuilder(db, "{{$element.table}}", {{$element.name}}Type)
-    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}QueryBuilder.BuildQuery)
+    {{$element.name}}Query := query.UseQuery(db, "{{$element.table}}", {{$element.name}}Type)
+    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}Query)
     if err != nil {
         return nil, err
     }
@@ -48,8 +48,8 @@ func NewApp(ctx context.Context, root Root) (*ApplicationContext, error) {
 {{end}}{{end}}{{if ne .env.layer true}}
 {{ range $element := .collections }}
     {{$element.name}}Type := reflect.TypeOf({{$element.raw}}.{{$element.Name}}{})
-    {{$element.name}}QueryBuilder := query.NewBuilder(db, "{{$element.table}}", {{$element.name}}Type)
-    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}QueryBuilder.BuildQuery)
+    {{$element.name}}QueryBuilder := query.UseQuery(db, "{{$element.table}}", {{$element.name}}Type)
+    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}Query)
     if err != nil {
         return nil, err
     }
