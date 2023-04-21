@@ -14,7 +14,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"github.com/core-go/config"
 	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/go-generator/core"
+	core "github.com/go-generator/core"
 	"github.com/go-generator/core/display"
 	uni "github.com/go-generator/core/export/types"
 	"github.com/go-generator/core/project"
@@ -53,8 +53,8 @@ func init() {
 
 func main() {
 	var (
-		root    metadata.Config
-		dbCache metadata.Database
+		root    core.Config
+		dbCache core.Database
 	)
 	err := config.Load(&root, "configs/config")
 	if err != nil {

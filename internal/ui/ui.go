@@ -18,17 +18,17 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/go-generator/core"
+	core "github.com/go-generator/core"
 	"github.com/go-generator/core/build"
 	"github.com/go-generator/core/display"
 	"github.com/go-generator/core/export"
 	gdb "github.com/go-generator/core/export/db"
 	"github.com/go-generator/core/export/relationship"
+	"github.com/go-generator/core/funcmap"
 	"github.com/go-generator/core/generator"
 	"github.com/go-generator/core/io"
 	"github.com/go-generator/core/list"
 	"github.com/go-generator/core/project"
-	"github.com/go-generator/core/template"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/sqweek/dialog"
 	"gopkg.in/yaml.v3"
@@ -46,12 +46,12 @@ func AppScreen(ctx context.Context,
 	canvas fyne.Canvas,
 	allTypes,
 	allUniversalTypes map[string]map[string]string,
-	c metadata.Config,
-	dbCache metadata.Database,
+	c core.Config,
+	dbCache core.Database,
 	screenSize fyne.Size,
 ) (*fyne.MainMenu, fyne.CanvasObject) {
-	var files []metadata.File
-	funcMap := template.MakeFuncMap()
+	var files []core.File
+	funcMap := funcmap.MakeFuncMap()
 	templatePath, err := filepath.Abs(filepath.Join(".", "configs", c.Template))
 	if err != nil {
 		display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
@@ -86,7 +86,7 @@ func AppScreen(ctx context.Context,
 	data := binding.BindStringList(
 		&[]string{},
 	)
-	dataStruct := binding.BindStruct(&metadata.File{})
+	dataStruct := binding.BindStruct(&core.File{})
 
 	openProjectPath := ""
 
@@ -161,7 +161,7 @@ func AppScreen(ctx context.Context,
 			display.PopUpWindows(fmt.Sprintf("error: %v", err), canvas)
 			return
 		}
-		dataStruct = binding.BindStruct(&metadata.File{})
+		dataStruct = binding.BindStruct(&core.File{})
 		projectJsonInput.SetText("")
 	}
 
@@ -189,7 +189,7 @@ func AppScreen(ctx context.Context,
 				return
 			}
 			var (
-				prj    metadata.Project
+				prj    core.Project
 				buffer bytes.Buffer
 			)
 			prjString := projectTemplate[prjTmplNameEntry.Selected]
@@ -258,7 +258,7 @@ func AppScreen(ctx context.Context,
 
 	btnLoadAndGenerate := widget.NewButtonWithIcon("Load and Generate", theme.DocumentCreateIcon(), func() {
 		var (
-			prj   metadata.Project
+			prj   core.Project
 			pData bytes.Buffer
 		)
 		enc := json.NewEncoder(&pData)
@@ -308,8 +308,8 @@ func AppScreen(ctx context.Context,
 	btnGenerateJSON := widget.NewButtonWithIcon("Generate Project JSON", theme.DocumentCreateIcon(), func() {
 		infinite.Show()
 		var (
-			models []metadata.Model
-			prj    *metadata.Project
+			models []core.Model
+			prj    *core.Project
 			pData  bytes.Buffer
 		)
 		sqlDB, err := project.ConnectDB(dbCache, driverEntry.Selected)
@@ -423,7 +423,7 @@ func AppScreen(ctx context.Context,
 	})
 
 	btnGenerate := widget.NewButtonWithIcon("Generate Output", theme.DocumentCreateIcon(), func() {
-		newDataStruct := binding.BindStruct(&metadata.File{})
+		newDataStruct := binding.BindStruct(&core.File{})
 		files, err = generator.GenerateFiles(projectName.Text, projectJsonInput.Text, templates, funcMap, allTypes)
 		if err != nil {
 			display.PopUpWindows(err.Error(), canvas)
