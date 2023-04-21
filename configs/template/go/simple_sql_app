@@ -1,0 +1,70 @@
+package app
+
+import (
+	"context"
+	"github.com/core-go/core"
+	v "github.com/core-go/core/v10"
+	"github.com/core-go/health"
+	"github.com/core-go/log/zap"
+	"github.com/core-go/search/query"
+	q "github.com/core-go/sql"
+	"reflect"
+{{if eq .env.layer true}}
+	"{{.env.go_module}}/internal/{{.env.handler}}"
+	"{{.env.go_module}}/internal/{{.env.model}}"{{if ne .env.handler .env.port}}
+	"{{.env.go_module}}/internal/{{.env.port}}"{{end}}{{ range $element := .collections }}
+	"{{.env.go_module}}/internal/{{.env.service}}"{{end}}{{end}}{{if eq .env.layer false}}{{ range $element := .collections }}
+	"{{.env.go_module}}/internal/{{$element.raw}}"{{end}}{{end}}
+)
+
+type ApplicationContext struct {
+	Health *health.Handler{{if .env.layer}}{{ range $element := .collections }}
+	{{$element.Name}} {{.env.port}}.{{$element.Name}}{{.env.Port}}{{end}}{{end}}{{if ne .env.layer true}}{{ range $element := .collections }}
+    {{$element.Name}} {{$element.raw}}.{{$element.Name}}{{.env.Port}}{{end}}{{end}}
+}
+
+func NewApp(ctx context.Context, conf Config) (*ApplicationContext, error) {
+	db, err := q.OpenByConfig(conf.Sql)
+	if err != nil {
+		return nil, err
+	}
+	logError := log.LogError
+	status := core.InitializeStatus(conf.Status)
+	action := core.InitializeAction(conf.Action)
+	validator := v.NewValidator(){{if .env.layer}}
+{{ range $element := .collections }}
+    {{$element.name}}Type := reflect.TypeOf({{.env.model}}.{{$element.Name}}{})
+    {{$element.name}}Query := query.UseQuery(db, "{{$element.table}}", {{$element.name}}Type)
+    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}Query)
+    if err != nil {
+        return nil, err
+    }
+    {{$element.name}}{{.env.Repository}}, err := q.NewRepository(db, "{{$element.table}}", {{$element.name}}Type)
+    if err != nil {
+        return nil, err
+    }
+    {{$element.name}}{{.env.Service}} := {{.env.service}}.New{{$element.Name}}{{.env.UseCase}}({{$element.name}}{{.env.Repository}})
+    {{$element.name}}{{.env.Handler}} := {{.env.handler}}.New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
+{{end}}{{end}}{{if ne .env.layer true}}
+{{ range $element := .collections }}
+    {{$element.name}}Type := reflect.TypeOf({{$element.raw}}.{{$element.Name}}{})
+    {{$element.name}}Query := query.UseQuery(db, "{{$element.table}}", {{$element.name}}Type)
+    {{$element.name}}SearchBuilder, err := q.NewSearchBuilder(db, {{$element.name}}Type, {{$element.name}}Query)
+    if err != nil {
+        return nil, err
+    }
+    {{$element.name}}{{.env.Repository}}, err := q.NewRepository(db, "{{$element.table}}", {{$element.name}}Type)
+    if err != nil {
+        return nil, err
+    }
+    {{$element.name}}{{.env.Service}} := {{$element.raw}}.New{{$element.Name}}{{.env.UseCase}}({{$element.name}}{{.env.Repository}})
+    {{$element.name}}{{.env.Handler}} := {{$element.raw}}.New{{$element.Name}}{{.env.Handler}}({{$element.name}}SearchBuilder.Search, {{$element.name}}{{.env.Service}}, status, logError, validator.Validate, &action)
+{{end}}{{end}}
+	sqlChecker := q.NewHealthChecker(db)
+	healthHandler := health.NewHandler(sqlChecker)
+
+	return &ApplicationContext{
+		Health: healthHandler,{{ range $element := .collections }}
+        {{$element.Name}}: {{$element.name}}{{$element.env.Handler}},{{end}}
+	}, nil
+}

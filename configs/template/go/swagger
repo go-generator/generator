@@ -1,0 +1,463 @@
+openapi: 3.0.3
+info:
+  title: Swagger Petstore - OpenAPI 3.0
+  description: |-
+    This is a sample Server based on the OpenAPI 3.0 specification.  You can find out more about
+    Swagger at [https://swagger.io](https://swagger.io).
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: apiteam@swagger.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+tags:
+  - name: samples
+    description: Operations about samples
+    externalDocs:
+      description: Find out more about samples
+      url: http://swagger.io
+paths:
+{{ range $element := .collections }}  /{{$element.paths}}:
+    post:
+      tags:
+        - {{$element.name}}
+      summary: Create {{$element.Name}}
+      description: Create a new {{$element.Name}}.
+      operationId: create{{$element.Name}}
+      requestBody:
+        description: Created {{$element.Name}} object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{{$element.Name}}'
+      responses:
+        '201':
+          description: 'return integer. 1: success'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{$element.Name}}Result'
+        '400':
+          description: Invalid {{$element.Name}} supplied
+        '422':
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: Duplicate key error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DuplicateKeyError'
+        '500':
+          description: Internal Server Error
+  /{{$element.paths}}/{{$element.go_id_url}}:
+    get:
+      tags:
+        - {{$element.name}}
+      summary: Get {{$element.Name}} by {{$element.Name}} ID
+      operationId: get{{$element.Name}}ById
+      parameters:{{ range $field := $element.fields }}{{if $field.key}}
+        - name: {{$field.name}}
+          in: path
+          description: The {{$field.name}} that needs to be deleted
+          required: true
+          schema:{{if eq $field.jstype "datetime"}}
+            type: {{$field.jstype}}
+            format: date-time{{else if eq $field.jstype "date"}}
+            type: {{$field.jstype}}
+            format: date{{else}}
+            type: {{$field.jstype}}{{end}}{{end}}{{end}}
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{$element.Name}}'
+        '400':
+          description: Invalid {{$element.Name}}Id supplied
+        '404':
+          description: {{$element.Name}} not found
+        '500':
+          description: Internal Server Error
+    put:
+      tags:
+        - {{$element.name}}
+      summary: Update {{$element.Name}}
+      description: Update a {{$element.Name}}.
+      operationId: update{{$element.Name}}
+      parameters:{{ range $field := $element.fields }}{{if $field.key}}
+        - name: {{$field.name}}
+          in: path
+          description: The {{$field.name}} that needs to be deleted
+          required: true
+          schema:
+            type: {{$field.jstype}}{{end}}{{end}}
+      requestBody:
+        description: Update an existent {{$element.Name}}
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{{$element.Name}}'
+      responses:
+        '200':
+          description: 'return integer. 1: success'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{$element.Name}}Result'
+        '400':
+          description: Invalid {{$element.Name}} supplied
+        '404':
+          description: {{$element.Name}} not found. Return 0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: 'Version error: The version of updated {{$element.Name}} is different from database version'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionError'
+        '422':
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+    patch:
+      tags:
+        - {{$element.name}}
+      summary: Partial Update {{$element.Name}}
+      description: Perform a partial update of one {{$element.Name}}.
+      operationId: patch{{$element.Name}}
+      parameters:{{ range $field := $element.fields }}{{if $field.key}}
+        - name: {{$field.name}}
+          in: path
+          description: The {{$field.name}} that needs to be deleted
+          required: true
+          schema:
+            type: {{$field.jstype}}{{end}}{{end}}
+      requestBody:
+        description: a partial {{$element.Name}}
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{{$element.Name}}'
+      responses:
+        '200':
+          description: 'return integer. 1: success'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{$element.Name}}Result'
+        '400':
+          description: Invalid {{$element.Name}} supplied
+        '404':
+          description: {{$element.Name}} not found. Return 0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: 'Version error: The version of updated {{$element.Name}} is different from database version'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionError'
+        '422':
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+    delete:
+      tags:
+        - {{$element.name}}
+      summary: Delete {{$element.Name}}
+      description: Delete one {{$element.Name}} by ID.
+      operationId: delete{{$element.Name}}
+      parameters:{{ range $field := $element.fields }}{{if $field.key}}
+        - name: {{$field.name}}
+          in: path
+          description: The {{$field.name}} that needs to be deleted
+          required: true
+          schema:
+            type: {{$field.jstype}}{{end}}{{end}}
+      responses:
+        '200':
+          description: 'return integer. 1: success'
+          content:
+            application/json:
+              schema:
+                type: integer
+        '400':
+          description: Invalid {{$element.name}}Id supplied
+        '404':
+          description: {{$element.Name}} not found. Return 0
+          content:
+            application/json:
+              schema:
+                type: integer
+        '500':
+          description: Internal Server Error
+  /{{$element.paths}}/search:
+    get:
+      tags:
+        - {{$element.name}}
+      summary: Search {{$element.Names}}
+      description: 'Search {{$element.Names}}'
+      operationId: search{{$element.Names}}
+      parameters:
+        - name: page
+          in: query
+          description: 'The page index'
+          schema:
+            type: integer
+            example: 1
+        - name: limit
+          in: query
+          description: 'The max of numbers of {{$element.Names}}'
+          schema:
+            type: integer
+            example: 120
+        - name: fields
+          in: query
+          description: 'The return fields. For example, fields=username,email => return 2 fields: username and email'
+          schema:
+            type: string{{ range $field := $element.fields }}{{if eq $field.jstype "datetime"}}
+        - name: {{ $field.name }}.min
+          in: query
+          description: 'The min of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: string
+            format: date-time
+        - name: {{ $field.name }}.max
+          in: query
+          description: 'The max of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: string
+            format: date-time{{else if eq $field.jstype "date"}}
+        - name: {{ $field.name }}.min
+          in: query
+          description: 'The min of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: string
+            format: date
+        - name: {{ $field.name }}.max
+          in: query
+          description: 'The max of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: string
+            format: date{{else if eq $field.jstype "integer"}}
+        - name: {{ $field.name }}.min
+          in: query
+          description: 'The min of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: integer
+        - name: {{ $field.name }}.max
+          in: query
+          description: 'The max of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: integer{{else if eq $field.jstype "number"}}
+        - name: {{ $field.name }}.min
+          in: query
+          description: 'The min of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: number
+        - name: {{ $field.name }}.max
+          in: query
+          description: 'The max of {{ $field.name }} that needs to be fetched'
+          schema:
+            type: number{{else if ne $field.jstype "binary"}}
+        - name: {{ $field.name }}
+          in: query
+          description: 'The {{ $field.name }} that needs to be fetched'
+          schema:
+            type: {{$field.jstype}}{{ end }}{{ end }}
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{$element.Name}}SearchResponse'
+        '400':
+          description: Invalid parameters supplied
+        '500':
+          description: Internal Server Error
+    post:
+      tags:
+        - {{$element.name}}
+      summary: search {{$element.Names}} by POST
+      description: search {{$element.Names}} by POST
+      operationId: search{{$element.Names}}ByPost
+      requestBody:
+        description: Search {{$element.Names}} by POST
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{{$element.Name}}Filter'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{$element.Name}}SearchResponse'
+        '400':
+          description: Invalid {{$element.Name}}Filter supplied
+        '500':
+          description: Internal Server Error
+{{end}}components:
+  schemas:
+    IntegerRange:
+      type: object
+      properties:
+        min:
+          type: integer
+          example: 1
+        max:
+          type: integer
+          example: 9
+    NumberRange:
+      type: object
+      properties:
+        min:
+          type: number
+          example: 1.0
+        max:
+          type: number
+          example: 9.0
+    DateRange:
+      type: object
+      properties:
+        min:
+          type: string
+          format: date
+          example: '1974-11-16'
+        max:
+          type: string
+          format: date
+          example: '1975-11-16'
+    TimeRange:
+      type: object
+      properties:
+        min:
+          type: string
+          format: date-time
+          example: '1974-11-16T00:00:00+07:00'
+        max:
+          type: string
+          format: date-time
+          example: '1975-11-16T00:00:00+07:00'
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: error code, such as required, min, max, email, url, phone, password...
+          example: 'required'
+        field:
+          type: string
+          description: error field
+          example: 'username'
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: '4: validation error'
+          example: 4
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: '0: not found'
+          example: 0
+    DuplicateKeyError:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: '0: duplicate key error'
+          example: 0
+    VersionError:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: '2: version error'
+          example: 2
+{{ range $element := .collections }}    {{ $element.Name }}:
+      type: object
+      properties:{{ range $field := $element.fields }}
+        {{ $field.name }}:{{if eq $field.jstype "datetime"}}
+          type: string
+          format: date-time{{else if eq $field.jstype "date"}}
+          type: string
+          format: date{{else if eq $field.jstype "binary"}}
+          type: string
+          format: binary{{else}}
+          type: {{$field.jstype}}{{end}}{{end}}
+    {{ $element.Name }}Result:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: '1: success'
+          example: 1
+        value:
+          $ref: '#/components/schemas/{{ $element.Name }}'
+    {{ $element.Name }}Filter:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: 'Page index'
+          example: 1
+        limit:
+          type: integer
+          description: 'Maximum of numbers of {{ $element.names }}'
+          example: 20
+        fields:
+          type: string
+          description: 'The return fields. For example, fields=username,email => return 2 fields: username and email'{{ range $field := $element.fields }}{{if eq $field.jstype "datetime"}}
+        {{ $field.name }}:
+          $ref: '#/components/schemas/TimeRange'{{else if eq $field.jstype "date"}}
+        {{ $field.name }}:
+          $ref: '#/components/schemas/DateRange'{{else if eq $field.jstype "integer"}}
+        {{ $field.name }}:
+          $ref: '#/components/schemas/IntegerRange'{{else if eq $field.jstype "number"}}
+        {{ $field.name }}:
+          $ref: '#/components/schemas/NumberRange'{{else if ne $field.jstype "binary"}}
+        {{ $field.name }}:
+          type: {{ $field.jstype }}{{end}}{{end}}
+    {{ $element.Name }}SearchResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 120
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/{{ $element.Name }}'
+{{end}}

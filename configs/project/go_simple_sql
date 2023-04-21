@@ -1,0 +1,96 @@
+{
+   "language": "go",
+   "env": {
+     "Filter": "Filter",
+     "Handler": "Handler",
+     "Port": "Port",
+     "Adapter": "Adapter",
+     "Repository": "Repository",
+     "Service": "Service",
+     "UseCase": "UseCase",
+     "data_source_name": "root:abcd1234@(localhost:3306)/masterdata?charset=utf8\u0026parseTime=True\u0026loc=Local",
+     "driver": "mysql",
+     "filter": "filter",
+     "go_module": "go-service",
+     "handler": "handler",
+     "port": "handler",
+     "adapter": "repository",
+     "repository": "repository",
+     "service": "service",
+     "usecase": "service",
+     "leaf": "false",
+     "model": "model",
+     "port": "handler",
+     "server_port": "8080"
+   },
+   "statics": [
+     {
+       "name": "sql_go_mod",
+       "file": "go.mod"
+     },
+     {
+       "name": "sql_config",
+       "file": "configs/config.yml"
+     },
+     {
+       "name": "main",
+       "file": "main.go"
+     },
+     {
+       "name": "sql_root",
+       "file": "internal/app/config.go"
+     }
+   ],
+   "arrays": [
+     {
+       "name": "simple_sql_app",
+       "file": "internal/app/app.go"
+     },
+     {
+       "name": "route",
+       "file": "internal/app/route.go"
+     },
+     {
+       "name": "liquibase_all",
+       "file": "documents/liquibase.yml"
+     },
+     {
+       "name": "swagger",
+       "file": "documents/swagger.yml"
+     }
+   ],
+   "entities": [
+     {
+       "name": "liquibase",
+       "file": "liquibase/{{.raw}}.yml",
+       "model": true,
+       "replace": true
+     },
+     {
+       "name": "model",
+       "file": "internal/{{.raw}}/{{.raw}}.go",
+       "model": true,
+       "replace": true
+     },
+     {
+       "name": "filter",
+       "file": "internal/{{.raw}}/filter.go"
+     },
+     {
+       "name": "service",
+       "file": "internal/{{.raw}}/service.go"
+     },
+     {
+       "name": "simple_usecase",
+       "file": "internal/{{.raw}}/usecase.go"
+     },
+     {
+       "name": "port",
+       "file": "internal/{{.raw}}/port.go"
+     },
+     {
+       "name": "handler",
+       "file": "internal/{{.raw}}/handler.go"
+     }
+   ]
+ }
